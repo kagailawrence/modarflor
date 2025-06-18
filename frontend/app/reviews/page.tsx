@@ -9,135 +9,119 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Star, ThumbsUp, MessageCircle, CheckCircle } from "lucide-react"
+import { Star, ThumbsUp, MessageCircle, CheckCircle, Loader2 } from "lucide-react"
 import { motion } from "framer-motion"
+import { BASE_URL } from "../../../lib/baseUrl"
 
-const reviews = [
-  {
-    id: 1,
-    name: "Amina Njoroge",
-    avatar: "/placeholder.svg?height=100&width=100",
-    rating: 5,
-    date: "2024-01-15",
-    service: "Epoxy Flooring",
-    project: "Garage Floor",
-    review:
-      "ModarFlor did an amazing job with our epoxy garage floor. Professional, timely, and the results are stunning!",
-    helpful: 12,
-    verified: true,
-    images: ["/placeholder.svg?height=200&width=300", "/placeholder.svg?height=200&width=300"],
-  },
-  {
-    id: 2,
-    name: "Brian Otieno",
-    avatar: "/placeholder.svg?height=100&width=100",
-    rating: 4,
-    date: "2024-01-10",
-    service: "Tile Installation",
-    project: "Kitchen",
-    review:
-      "Very happy with the tile installation in our kitchen. The team was friendly and paid attention to detail.",
-    helpful: 8,
-    verified: true,
-    images: [],
-  },
-  {
-    id: 3,
-    name: "Grace Wambui",
-    avatar: "/placeholder.svg?height=100&width=100",
-    rating: 5,
-    date: "2024-01-05",
-    service: "Hardwood Flooring",
-    project: "Living Room",
-    review:
-      "Excellent service and quality. Our hardwood floors look beautiful and the process was smooth from start to finish.",
-    helpful: 15,
-    verified: true,
-    images: ["/placeholder.svg?height=200&width=300"],
-  },
-  {
-    id: 4,
-    name: "Mwangi Kimani",
-    avatar: "/placeholder.svg?height=100&width=100",
-    rating: 5,
-    date: "2023-12-28",
-    service: "Carpet Installation",
-    project: "Office",
-    review: "The new carpet in our office is perfect. ModarFlor exceeded our expectations!",
-    helpful: 6,
-    verified: true,
-    images: [],
-  },
-  {
-    id: 5,
-    name: "Janet Otieno",
-    avatar: "/placeholder.svg?height=100&width=100",
-    rating: 4,
-    date: "2023-12-20",
-    service: "Laminate Flooring",
-    project: "House",
-    review: "Great experience with the laminate flooring. Would recommend ModarFlor to anyone in Nairobi!",
-    helpful: 9,
-    verified: true,
-    images: ["/placeholder.svg?height=200&width=300", "/placeholder.svg?height=200&width=300"],
-  },
-  {
-    id: 6,
-    name: "Robert Martinez",
-    avatar: "/placeholder.svg?height=100&width=100",
-    rating: 5,
-    date: "2023-12-15",
-    service: "Epoxy Flooring",
-    project: "Garage Floor",
-    review:
-      "Amazing transformation of our garage! The epoxy flooring looks like a showroom floor. The team explained the process thoroughly and delivered exactly what they promised. Great value for money and exceptional quality.",
-    helpful: 11,
-    verified: true,
-    images: ["/placeholder.svg?height=200&width=300"],
-  },
-]
+interface Testimonial {
+  id: number | string // API might use string IDs
+  name: string
+  avatar?: string // Optional as per existing data (though all have it)
+  rating: number
+  date: string // Keep as string, can be parsed
+  service: string // Could be service name or ID, assuming name for now
+  project?: string // Optional
+  review: string // Or 'testimonial_text' or similar from backend
+  helpful?: number // Optional
+  verified?: boolean // Optional
+  images?: string[] // Optional
+  // Potential backend fields:
+  // userId?: string;
+  // serviceId?: string;
+  // projectId?: string;
+}
 
-const services = [
-  "All Services",
-  "Epoxy Flooring",
-  "Tile Installation",
-  "Carpet Installation",
-  "Hardwood Flooring",
-  "Vinyl Flooring",
-]
-const ratings = ["All Ratings", "5 Stars", "4 Stars", "3 Stars", "2 Stars", "1 Star"]
+const ratingsFilterOptions = ["All Ratings", "5 Stars", "4 Stars", "3 Stars", "2 Stars", "1 Star"]
 
 export default function ReviewsPage() {
-  const [filteredReviews, setFilteredReviews] = useState(reviews)
+  const [allFetchedTestimonials, setAllFetchedTestimonials] = useState<Testimonial[]>([])
+  const [filteredReviews, setFilteredReviews] = useState<Testimonial[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedService, setSelectedService] = useState("All Services")
   const [selectedRating, setSelectedRating] = useState("All Ratings")
   const [sortBy, setSortBy] = useState("newest")
   const [showReviewForm, setShowReviewForm] = useState(false)
+  const [pageLoading, setPageLoading] = useState(true)
+  const [pageError, setPageError] = useState<string | null>(null)
 
-  // Calculate average rating
-  const averageRating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
-  const ratingDistribution = [5, 4, 3, 2, 1].map((rating) => ({
-    rating,
-    count: reviews.filter((r) => r.rating === rating).length,
-    percentage: (reviews.filter((r) => r.rating === rating).length / reviews.length) * 100,
-  }))
+  // Derived states for filters and stats
+  const [dynamicServices, setDynamicServices] = useState<string[]>(["All Services"])
+  const [averageRating, setAverageRating] = useState(0)
+  const [totalReviews, setTotalReviews] = useState(0)
+  const [ratingDistribution, setRatingDistribution] = useState<
+    { rating: number; count: number; percentage: number }[]
+  >([])
 
   useEffect(() => {
-    const filtered = reviews.filter((review) => {
-      const matchesSearch =
-        review.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        review.review.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        review.service.toLowerCase().includes(searchTerm.toLowerCase())
+    const fetchTestimonials = async () => {
+      try {
+        setPageLoading(true)
+        const response = await fetch(`${BASE_URL}/api/testimonials`)
+        if (!response.ok) {
+          throw new Error("Failed to fetch testimonials")
+        }
+        const data: Testimonial[] = await response.json()
+        // Assuming API returns 'id', 'name', 'rating', 'date', 'service', 'review'
+        // And potentially 'avatar', 'project', 'helpful', 'verified', 'images'
+        // If 'service' is an ID, it would need to be mapped to a name or handled differently
+        setAllFetchedTestimonials(data)
+        setPageError(null)
+      } catch (err) {
+        setPageError(err instanceof Error ? err.message : "An unknown error occurred")
+        setAllFetchedTestimonials([])
+      } finally {
+        setPageLoading(false)
+      }
+    }
+    fetchTestimonials()
+  }, [])
 
-      const matchesService = selectedService === "All Services" || review.service === selectedService
+  useEffect(() => {
+    if (allFetchedTestimonials.length > 0) {
+      // Calculate stats
+      const avgRating =
+        allFetchedTestimonials.reduce((sum, t) => sum + t.rating, 0) / allFetchedTestimonials.length
+      setAverageRating(avgRating)
+      setTotalReviews(allFetchedTestimonials.length)
+
+      const distribution = [5, 4, 3, 2, 1].map((r_val) => {
+        const count = allFetchedTestimonials.filter((t) => t.rating === r_val).length
+        return {
+          rating: r_val,
+          count,
+          percentage: (count / allFetchedTestimonials.length) * 100,
+        }
+      })
+      setRatingDistribution(distribution)
+
+      // Populate dynamic services filter
+      const uniqueServices = ["All Services", ...new Set(allFetchedTestimonials.map((t) => t.service))]
+      setDynamicServices(uniqueServices)
+    } else {
+      // Reset stats if no testimonials
+      setAverageRating(0)
+      setTotalReviews(0)
+      setRatingDistribution([])
+      setDynamicServices(["All Services"])
+    }
+
+    // Filtering logic
+    const filtered = allFetchedTestimonials.filter((testimonial) => {
+      const matchesSearch =
+        testimonial.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        testimonial.review.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        testimonial.service.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (testimonial.project && testimonial.project.toLowerCase().includes(searchTerm.toLowerCase()))
+
+      const matchesService = selectedService === "All Services" || testimonial.service === selectedService
       const matchesRating =
-        selectedRating === "All Ratings" || review.rating === Number.parseInt(selectedRating.split(" ")[0])
+        selectedRating === "All Ratings" ||
+        testimonial.rating === Number.parseInt(selectedRating.split(" ")[0])
 
       return matchesSearch && matchesService && matchesRating
     })
 
-    // Sort reviews
+    // Sorting logic (applied to already filtered items)
     filtered.sort((a, b) => {
       switch (sortBy) {
         case "newest":
@@ -149,14 +133,15 @@ export default function ReviewsPage() {
         case "lowest":
           return a.rating - b.rating
         case "helpful":
-          return b.helpful - a.helpful
+          // Ensure 'helpful' exists and provide a default if not
+          return (b.helpful || 0) - (a.helpful || 0)
         default:
           return 0
       }
     })
 
     setFilteredReviews(filtered)
-  }, [searchTerm, selectedService, selectedRating, sortBy])
+  }, [searchTerm, selectedService, selectedRating, sortBy, allFetchedTestimonials])
 
   const renderStars = (rating: number, size = "w-4 h-4") => {
     return (
@@ -167,6 +152,29 @@ export default function ReviewsPage() {
             className={`${size} ${star <= rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300"}`}
           />
         ))}
+      </div>
+    )
+  }
+
+  if (pageLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="mr-2 h-8 w-8 animate-spin" />
+        <p>Loading reviews...</p>
+      </div>
+    )
+  }
+
+  if (pageError) {
+    return (
+      <div className="flex flex-col justify-center items-center h-screen text-center">
+        <p className="text-red-500 text-xl mb-4">Error: {pageError}</p>
+        <p className="text-muted-foreground">
+          Could not load customer reviews. Please try refreshing the page or contact support if the problem persists.
+        </p>
+        <Button onClick={() => window.location.reload()} className="mt-4">
+          Refresh Page
+        </Button>
       </div>
     )
   }
@@ -188,24 +196,32 @@ export default function ReviewsPage() {
             <div className="lg:col-span-1 space-y-6">
               <Card>
                 <CardContent className="p-6">
-                  <div className="text-center mb-6">
-                    <div className="text-4xl font-bold mb-2">{averageRating.toFixed(1)}</div>
-                    {renderStars(Math.round(averageRating), "w-6 h-6")}
-                    <p className="text-sm text-muted-foreground mt-2">Based on {reviews.length} reviews</p>
-                  </div>
-
-                  <div className="space-y-3">
-                    {ratingDistribution.map(({ rating, count, percentage }) => (
-                      <div key={rating} className="flex items-center gap-2">
-                        <span className="text-sm w-6">{rating}</span>
-                        <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                        <div className="flex-1 bg-muted rounded-full h-2">
-                          <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${percentage}%` }} />
-                        </div>
-                        <span className="text-sm text-muted-foreground w-8">{count}</span>
+                  {totalReviews > 0 ? (
+                    <>
+                      <div className="text-center mb-6">
+                        <div className="text-4xl font-bold mb-2">{averageRating.toFixed(1)}</div>
+                        {renderStars(Math.round(averageRating), "w-6 h-6")}
+                        <p className="text-sm text-muted-foreground mt-2">Based on {totalReviews} reviews</p>
                       </div>
-                    ))}
-                  </div>
+                      <div className="space-y-3">
+                        {ratingDistribution.map(({ rating, count, percentage }) => (
+                          <div key={rating} className="flex items-center gap-2">
+                            <span className="text-sm w-6">{rating}</span>
+                            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                            <div className="flex-1 bg-muted rounded-full h-2">
+                              <div
+                                className="bg-yellow-500 h-2 rounded-full"
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                            <span className="text-sm text-muted-foreground w-8">{count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center text-muted-foreground py-4">No reviews yet.</div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -238,7 +254,7 @@ export default function ReviewsPage() {
                         <SelectValue placeholder="Service" />
                       </SelectTrigger>
                       <SelectContent>
-                        {services.map((service) => (
+                        {dynamicServices.map((service) => (
                           <SelectItem key={service} value={service}>
                             {service}
                           </SelectItem>
@@ -251,7 +267,7 @@ export default function ReviewsPage() {
                         <SelectValue placeholder="Rating" />
                       </SelectTrigger>
                       <SelectContent>
-                        {ratings.map((rating) => (
+                        {ratingsFilterOptions.map((rating) => (
                           <SelectItem key={rating} value={rating}>
                             {rating}
                           </SelectItem>
@@ -305,7 +321,8 @@ export default function ReviewsPage() {
                                 <SelectValue placeholder="Select service" />
                               </SelectTrigger>
                               <SelectContent>
-                                {services.slice(1).map((service) => (
+                                {/* Use dynamicServices, excluding "All Services" */}
+                                {dynamicServices.slice(1).map((service) => (
                                   <SelectItem key={service} value={service}>
                                     {service}
                                   </SelectItem>
@@ -407,7 +424,7 @@ export default function ReviewsPage() {
                                 {review.images.map((image, imgIndex) => (
                                   <div key={imgIndex} className="relative w-20 h-20 rounded-lg overflow-hidden">
                                     <img
-                                      src={image || "/placeholder.svg"}
+                                      src={image || "/placeholder.svg"} // Use placeholder if image is null/undefined
                                       alt={`Review image ${imgIndex + 1}`}
                                       className="w-full h-full object-cover"
                                     />
@@ -419,7 +436,7 @@ export default function ReviewsPage() {
                             <div className="flex items-center gap-4">
                               <Button variant="ghost" size="sm">
                                 <ThumbsUp className="w-4 h-4 mr-2" />
-                                Helpful ({review.helpful})
+                                Helpful ({review.helpful || 0}) {/* Default helpful to 0 if undefined */}
                               </Button>
                               <Button variant="ghost" size="sm">
                                 <MessageCircle className="w-4 h-4 mr-2" />
@@ -434,10 +451,16 @@ export default function ReviewsPage() {
                 ))}
               </div>
 
-              {filteredReviews.length === 0 && (
+              {filteredReviews.length === 0 && allFetchedTestimonials.length > 0 && (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">No reviews found matching your criteria.</p>
                 </div>
+              )}
+              {/* Show this message if there are no reviews at all from backend */}
+              {allFetchedTestimonials.length === 0 && !pageLoading && !pageError && (
+                 <div className="text-center py-12">
+                    <p className="text-muted-foreground">Be the first to write a review!</p>
+                 </div>
               )}
             </div>
           </div>

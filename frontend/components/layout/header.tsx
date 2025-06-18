@@ -139,7 +139,7 @@ const Header = () => {
             )}
             <div className="flex items-center space-x-2 py-2">
               <Phone size={18} className="text-primary" />
-              <span className="font-medium">1-800-FLOOR-PRO</span>
+              <span className="font-medium">+254-722 843995</span>
             </div>
             <Button className="w-full" asChild>
               <Link href="/quote">Get Quote</Link>

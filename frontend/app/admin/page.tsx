@@ -35,19 +35,42 @@ export default function AdminDashboard() {
     recentTestimonials: [],
   })
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+
   useEffect(() => {
     // Fetch dashboard stats
     fetchDashboardStats()
   }, [])
 
   const fetchDashboardStats = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      // Mock data for now - replace with actual API calls
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        // This should be caught by AdminLayout, but as a safeguard:
+        setError("Not authenticated");
+        // router.push("/admin/login"); // Or redirect
+        return;
+      }
+
+      // EXAMPLE: Replace with actual API call(s)
+      // const response = await fetch(`${BASE_URL}/api/admin/dashboard-stats`, {
+      //   headers: { Authorization: `Bearer ${token}` },
+      // });
+      // if (!response.ok) throw new Error("Failed to fetch stats");
+      // const data = await response.json();
+      // setStats(data);
+
+      // Using mock data as backend endpoint for stats doesn't exist yet
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
       setStats({
         totalProjects: 24,
         totalServices: 6,
         totalTestimonials: 18,
-        totalUsers: 3,
+        totalUsers: 3, // This would come from an authenticated user count endpoint
         recentProjects: [
           { id: 1, title: "Modern Epoxy Garage Floor", category: "Residential" },
           { id: 2, title: "Luxury Tile Bathroom", category: "Residential" },
@@ -58,11 +81,14 @@ export default function AdminDashboard() {
           { id: 2, name: "Brian Otieno", rating: 4 },
           { id: 3, name: "Wanjiku Kamau", rating: 5 },
         ],
-      })
-    } catch (error) {
-      console.error("Error fetching dashboard stats:", error)
+      });
+    } catch (err) {
+      console.error("Error fetching dashboard stats:", err);
+      setError(err instanceof Error ? err.message : "Failed to load dashboard data.");
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   const statCards = [
     {
@@ -94,6 +120,14 @@ export default function AdminDashboard() {
       bgColor: "bg-orange-100",
     },
   ]
+  if (loading) {
+    return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ml-2">Loading dashboard...</p></div>;
+  }
+
+  if (error) {
+    return <div className="p-6 text-center"><AlertCircle className="h-12 w-12 mx-auto text-red-500 mb-4" /><h2 className="text-xl font-semibold text-red-600">Error Loading Dashboard</h2><p>{error}</p><Button onClick={fetchDashboardStats} className="mt-4">Try Again</Button></div>;
+  }
+
   return (
     <div className="space-y-6">
       <div>

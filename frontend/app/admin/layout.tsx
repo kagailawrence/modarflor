@@ -30,43 +30,52 @@ export default function AdminLayout({
   const router = useRouter()
 
   useEffect(() => {
-    // Only run on client
     if (typeof window !== "undefined") {
-      const token = localStorage.getItem("accessToken")
-      if (!token) {
-        // Only redirect if not already on login page
+      const token = localStorage.getItem("accessToken");
+      const userRole = localStorage.getItem("userRole"); // Expect 'Admin', 'Editor', etc.
+      const userName = localStorage.getItem("userName");
+      const userEmail = localStorage.getItem("userEmail");
+
+      if (!token || userRole !== "Admin") {
         if (pathname !== "/admin/login") {
-          router.replace("/admin/login")
+          router.replace("/admin/login");
         }
-        return
+        return;
       }
-      // Only set user if not on login page
+
       if (pathname !== "/admin/login") {
-        const userData = {
-          name: "Admin User",
-          email: "admin@modarflor.com",
-          role: "Admin",
-        }
-        setUser(userData)
+        setUser({
+          name: userName || "Admin",
+          email: userEmail || "admin@example.com", // Fallback if not in localStorage
+          role: userRole, // Should be "Admin" at this point
+        });
       }
     }
-  }, [router, pathname])
+  }, [router, pathname]);
 
   const handleLogout = () => {
-    localStorage.removeItem("accessToken")
-    localStorage.removeItem("refreshToken")
-    router.push("/admin/login")
-  }
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userEmail");
+    setUser(null); // Clear user state
+    router.push("/admin/login");
+  };
 
   // Only render layout (sidebar, header, etc) if not on login page
   if (pathname === "/admin/login") {
-    return <>{children}</>
+    return <>{children}</>; // Render login page without layout
   }
 
+  // If still checking or no token/admin role, show loading or redirect handled by useEffect
   if (!user && pathname !== "/admin/login") {
-    return <div>Loading...</div>
+     // This state means useEffect is either still running, or has decided to redirect.
+     // Showing a generic loading can prevent flicker before redirect.
+    return <div className="flex h-screen items-center justify-center">Loading admin panel...</div>;
   }
 
+  // If user object is populated (meaning token and role are valid), render the layout
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
       {/* Sidebar */}
@@ -95,7 +104,7 @@ export default function AdminLayout({
           </div>
 
           {sidebarItems.map((item) => {
-            const isActive = pathname === item.href
+            const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href))
             return (
               <Link
                 key={item.name}
@@ -124,12 +133,15 @@ export default function AdminLayout({
               <Menu className="h-6 w-6" />
             </Button>
 
+             {/* Placeholder for potential breadcrumbs or page title */}
+            <div></div>
+
             <div className="flex items-center space-x-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src="/placeholder.svg" alt={user?.name || "User"} />
+                      <AvatarImage src={user?.image || "/placeholder.svg"} alt={user?.name || "User"} />
                       <AvatarFallback>
                         {user?.name
                           ? user.name
@@ -137,14 +149,14 @@ export default function AdminLayout({
                               .map((n: string) => n[0])
                               .join("")
                               .toUpperCase()
-                          : "U"}
+                          : "AD"}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <div className="flex flex-col space-y-1 p-2">
-                    <p className="text-sm font-medium leading-none">{user?.name || ""}</p>
+                    <p className="text-sm font-medium leading-none">{user?.name || "Admin"}</p>
                     <p className="text-xs leading-none text-muted-foreground">{user?.email || ""}</p>
                   </div>
                   <DropdownMenuItem onClick={handleLogout}>

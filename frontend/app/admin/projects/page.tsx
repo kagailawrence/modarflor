@@ -20,54 +20,69 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { BASE_URL } from "@/lib/baseUrl" // Import BASE_URL
+import { useToast } from "@/components/ui/use-toast" // For user feedback
+
+// Define an interface for the project structure
+interface ProjectImage {
+  url: string
+  alt: string
+  isFeatured?: boolean // Assuming this might exist
+}
+
+interface Project {
+  id: string // Or number, depending on your API
+  title: string
+  description: string
+  category: string
+  type: string
+  images: ProjectImage[]
+  createdAt: string // Or Date
+  // Add any other relevant fields from your API
+}
 
 export default function AdminProjects() {
-  const [projects, setProjects] = useState([])
+  const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null) // For fetch errors
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("all")
+  const { toast } = useToast()
 
   useEffect(() => {
     fetchProjects()
   }, [])
 
   const fetchProjects = async () => {
+    setLoading(true)
+    setError(null)
     try {
-      setLoading(true)
-      // Mock data - replace with actual API call
-      const mockProjects = [
-        {
-          id: "1",
-          title: "Modern Epoxy Garage Floor",
-          description: "A sleek, durable epoxy floor installation for a modern home garage.",
-          category: "Residential",
-          type: "Epoxy",
-          images: [{ url: "/placeholder.svg?height=300&width=400", alt: "Epoxy floor", isFeatured: true }],
-          createdAt: "2024-01-15",
+      const token = localStorage.getItem("accessToken")
+      if (!token) {
+        // This should ideally be handled by AdminLayout, but good to have a fallback
+        setError("Authentication token not found. Please login again.")
+        setLoading(false)
+        // Consider redirecting to login here as well if layout fails
+        return
+      }
+
+      const response = await fetch(`${BASE_URL}/api/projects`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-        {
-          id: "2",
-          title: "Luxury Tile Bathroom",
-          description: "Custom tile design and installation for a luxury master bathroom.",
-          category: "Residential",
-          type: "Tile",
-          images: [{ url: "/placeholder.svg?height=300&width=400", alt: "Tile bathroom", isFeatured: true }],
-          createdAt: "2024-01-10",
-        },
-        {
-          id: "3",
-          title: "Commercial Office Carpet",
-          description: "High-traffic carpet installation for a corporate office space.",
-          category: "Commercial",
-          type: "Carpet",
-          images: [{ url: "/placeholder.svg?height=300&width=400", alt: "Office carpet", isFeatured: true }],
-          createdAt: "2024-01-05",
-        },
-      ]
-      setProjects(mockProjects)
-    } catch (error) {
-      console.error("Error fetching projects:", error)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || `Failed to fetch projects: ${response.statusText}`)
+      }
+      const data: Project[] = await response.json()
+      setProjects(data)
+    } catch (err) {
+      console.error("Error fetching projects:", err)
+      setError(err instanceof Error ? err.message : "An unknown error occurred while fetching projects.")
+      setProjects([]) // Clear projects on error
     } finally {
       setLoading(false)
     }
@@ -75,16 +90,37 @@ export default function AdminProjects() {
 
   const handleDeleteProject = async (id: string) => {
     try {
-      // API call to delete project
-      console.log("Deleting project:", id)
-      // Remove from local state
-      setProjects(projects.filter((p: any) => p.id !== id))
-    } catch (error) {
-      console.error("Error deleting project:", error)
+      const token = localStorage.getItem("accessToken")
+      if (!token) {
+        toast({ title: "Error", description: "Authentication token not found.", variant: "destructive" })
+        return
+      }
+
+      const response = await fetch(`${BASE_URL}/api/projects/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to delete project")
+      }
+
+      setProjects((prevProjects) => prevProjects.filter((p) => p.id !== id))
+      toast({ title: "Success", description: "Project deleted successfully." })
+    } catch (err) {
+      console.error("Error deleting project:", err)
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Could not delete project.",
+        variant: "destructive",
+      })
     }
   }
 
-  const filteredProjects = projects.filter((project: any) => {
+  const filteredProjects = projects.filter((project: Project) => {
     const matchesSearch =
       project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       project.description.toLowerCase().includes(searchTerm.toLowerCase())
@@ -95,7 +131,21 @@ export default function AdminProjects() {
   })
 
   if (loading) {
-    return <div>Loading...</div>
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Plus className="h-8 w-8 animate-spin text-primary" /> {/* Using Plus as a spinner example */}
+        <p className="ml-2">Loading projects...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-500 text-xl mb-4">Error: {error}</p>
+        <Button onClick={fetchProjects}>Try Again</Button>
+      </div>
+    )
   }
 
   return (
@@ -181,26 +231,34 @@ export default function AdminProjects() {
                     </Link>
                   </Button>
                   <Button size="sm" variant="outline" asChild>
-                    <Link href={`/admin/projects/${project.id}/edit`}>
+                    {/* Ensure the link is correct for your routing setup for edit page */}
+                    <Link href={`/admin/projects/edit/${project.id}`}>
                       <Edit className="h-4 w-4" />
                     </Link>
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="outline">
+                      {/* Added text for better UX, or keep as icon-only if preferred */}
+                      <Button size="sm" variant="outline" className="text-red-500 hover:text-red-700">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          This action cannot be undone. This will permanently delete the project.
+                          This action cannot be undone. This will permanently delete the project
+                          <span className="font-semibold"> {project.title}</span>.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDeleteProject(project.id)}>Delete</AlertDialogAction>
+                        <AlertDialogAction
+                          onClick={() => handleDeleteProject(project.id)}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Delete Project
+                        </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
@@ -211,10 +269,22 @@ export default function AdminProjects() {
         ))}
       </div>
 
-      {filteredProjects.length === 0 && (
+      {projects.length > 0 && filteredProjects.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">No projects found matching your criteria.</p>
+          <p className="text-muted-foreground">No projects found matching your current filters.</p>
         </div>
+      )}
+
+      {projects.length === 0 && !loading && !error && (
+         <div className="text-center py-12">
+           <p className="text-muted-foreground">No projects found. Get started by adding a new project.</p>
+           <Button asChild className="mt-4">
+             <Link href="/admin/projects/new">
+               <Plus className="h-4 w-4 mr-2" />
+               Add Project
+             </Link>
+           </Button>
+         </div>
       )}
     </div>
   )

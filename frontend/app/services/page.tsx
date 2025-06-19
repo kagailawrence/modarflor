@@ -1,104 +1,62 @@
+"use client"
+
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ArrowRight, CheckCircle } from "lucide-react"
+import { useEffect, useState } from "react"
+import { BASE_URL } from "../../../lib/baseUrl"
 
-const services = [
- {
-    id: 1,
-    title: "Epoxy Flooring",
-    description: "Durable, seamless, and customizable epoxy floors for garages, basements, and commercial spaces.",
-    image: "/Epoxy Flooring.jpg?height=400&width=600",
-    alt: "Epoxy flooring installation",
-    features: [
-      "Stain and chemical resistant",
-      "Seamless and easy to clean",
-      "Customizable colors and patterns",
-      "Ideal for garages and commercial spaces",
-      "Long-lasting durability",
-      "Quick installation process",
-    ],
-  },
-  {
-    id: 2,
-    title: "Tile Installation",
-    description:
-      "Expert installation of ceramic, porcelain, and natural stone tiles for any room in your home or business.",
-    image: "/Tile Installation.jpg?height=400&width=600",
-    alt: "Tile installation",
-    features: [
-      "Custom patterns and designs",
-      "Waterproof options available",
-      "Heated floor installation",
-      "Wide selection of materials",
-      "Precision cutting and placement",
-      "Proper sealing and finishing",
-    ],
-  },
-  {
-    id: 3,
-    title: "Carpet Installation",
-    description: "Professional carpet installation with a wide range of styles, colors, and textures to choose from.",
-    image: "/Carpet Installation.jpg?height=400&width=600",
-    alt: "Carpet installation",
-    features: [
-      "Stain protection treatments",
-      "Pet-friendly options",
-      "Sound insulation properties",
-      "Comfort and warmth",
-      "Professional stretching and seaming",
-      "Proper padding installation",
-    ],
-  },
-  {
-    id: 4,
-    title: "Hardwood Flooring",
-    description: "Beautiful, timeless hardwood floors installed with precision and care for lasting beauty.",
-    image: "/Hardwood Flooring.jpg?height=400&width=600",
-    alt: "Hardwood flooring installation",
-    features: [
-      "Solid and engineered options",
-      "Refinishing services",
-      "Custom stain colors",
-      "Eco-friendly options",
-      "Professional sanding and finishing",
-      "Proper acclimation process",
-    ],
-  },
-  {
-    id: 5,
-    title: "Vinyl & Laminate",
-    description: "Affordable, durable, and water-resistant vinyl and laminate flooring options for any room.",
-    image: "/Vinyl & Laminate.jpg?height=400&width=600",
-    alt: "Vinyl flooring installation",
-    features: [
-      "Waterproof options",
-      "Wood and stone look designs",
-      "Easy maintenance",
-      "Quick installation",
-      "Comfortable underfoot",
-      "Budget-friendly options",
-    ],
-  },
-  {
-    id: 6,
-    title: "Floor Restoration",
-    description: "Bring your existing floors back to life with our professional restoration and refinishing services.",
-    image: "/Floor Restoration.jpg?height=400&width=600",
-    alt: "Floor restoration",
-    features: [
-      "Hardwood refinishing",
-      "Tile and grout cleaning",
-      "Concrete polishing",
-      "Stain removal",
-      "Scratch and damage repair",
-      "Color restoration",
-    ],
-  },
-]
+interface Service {
+  id: number
+  title: string
+  description: string
+  image: string
+  alt: string
+  features: string[]
+}
 
 export default function ServicesPage() {
+  const [services, setServices] = useState<Service[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const response = await fetch(`${BASE_URL}/api/services`)
+        if (!response.ok) {
+          throw new Error("Failed to fetch services")
+        }
+        const data = await response.json()
+        setServices(data)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An unknown error occurred")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchServices()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p>Loading services...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p className="text-red-500">Error: {error}</p>
+      </div>
+    )
+  }
+
   return (
     <div className="py-12 md:py-16">
       <div className="container mx-auto px-4">

@@ -10,6 +10,7 @@ import testimonialRoutes from "./routes/testimonialRoutes"
 import serviceRoutes from "./routes/serviceRoutes"
 import userRoutes from "./routes/userRoutes"
 import authRoutes from "./routes/authRoutes"
+import logRoutes from "./routes/logRoutes"; // Import log routes
 import { authenticateJWT } from "./middleware/auth"
 import winston from "winston"
 import fs from "fs"
@@ -84,7 +85,8 @@ app.use("/api/auth", authRoutes)
 app.use("/api/projects", projectRoutes)
 app.use("/api/testimonials", testimonialRoutes)
 app.use("/api/services", serviceRoutes)
-app.use("/api/users", authenticateJWT, userRoutes) // Protected route
+app.use("/api/users", authenticateJWT, userRoutes) // Protected user routes
+app.use("/api/logs", logRoutes); // Protected log routes, auth handled within logRoutes
 
 // Health check endpoint
 app.get("/health", (req, res) => {

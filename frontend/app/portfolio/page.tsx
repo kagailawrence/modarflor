@@ -11,103 +11,55 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowRight, Search, Loader2 } from "lucide-react"
 import { motion } from "framer-motion"
 
-// Mock projects data
-const allProjects = [
-	{
-		id: "1",
-		title: "Modern Epoxy Garage Floor",
-		category: "Residential",
-		type: "Epoxy",
-		description: "A sleek, durable epoxy floor installation for a modern home garage.",
-		image: "/placeholder.svg?height=600&width=800",
-		alt: "Modern epoxy garage floor",
-	},
-	{
-		id: "2",
-		title: "Luxury Tile Bathroom",
-		category: "Residential",
-		type: "Tile",
-		description: "Custom tile design and installation for a luxury master bathroom.",
-		image: "/placeholder.svg?height=600&width=800",
-		alt: "Luxury tile bathroom",
-	},
-	{
-		id: "3",
-		title: "Commercial Office Carpet",
-		category: "Commercial",
-		type: "Carpet",
-		description: "High-traffic carpet installation for a corporate office space.",
-		image: "/placeholder.svg?height=600&width=800",
-		alt: "Commercial office carpet",
-	},
-	{
-		id: "4",
-		title: "Restaurant Epoxy Flooring",
-		category: "Commercial",
-		type: "Epoxy",
-		description: "Durable, easy-to-clean epoxy flooring for a busy restaurant kitchen.",
-		image: "/placeholder.svg?height=600&width=800",
-		alt: "Restaurant epoxy flooring",
-	},
-	{
-		id: "5",
-		title: "Hardwood Living Room",
-		category: "Residential",
-		type: "Hardwood",
-		description: "Beautiful hardwood flooring installation for a family living room.",
-		image: "/placeholder.svg?height=600&width=800",
-		alt: "Hardwood living room floor",
-	},
-	{
-		id: "6",
-		title: "Hotel Lobby Marble Tiles",
-		category: "Commercial",
-		type: "Tile",
-		description: "Elegant marble tile installation for a luxury hotel lobby.",
-		image: "/placeholder.svg?height=600&width=800",
-		alt: "Hotel lobby marble tiles",
-	},
-	{
-		id: "7",
-		title: "Basement Vinyl Flooring",
-		category: "Residential",
-		type: "Vinyl",
-		description: "Waterproof vinyl flooring for a finished basement entertainment area.",
-		image: "/placeholder.svg?height=600&width=800",
-		alt: "Basement vinyl flooring",
-	},
-	{
-		id: "8",
-		title: "Retail Store Laminate Flooring",
-		category: "Commercial",
-		type: "Laminate",
-		description: "Durable laminate flooring for a high-traffic retail environment.",
-		image: "/placeholder.svg?height=600&width=800",
-		alt: "Retail store laminate flooring",
-	},
-	{
-		id: "9",
-		title: "Outdoor Deck Composite",
-		category: "Residential",
-		type: "Composite",
-		description: "Weather-resistant composite deck flooring for outdoor entertainment.",
-		image: "/placeholder.svg?height=600&width=800",
-		alt: "Outdoor deck composite flooring",
-	},
-]
+import { BASE_URL } from "../../../lib/baseUrl"
+
+interface Project {
+	id: string
+	title: string
+	category: string
+	type: string
+	description: string
+	image: string
+	alt: string
+}
 
 const PortfolioPage = () => {
+	const [allFetchedProjects, setAllFetchedProjects] = useState<Project[]>([])
 	const [searchTerm, setSearchTerm] = useState("")
 	const [categoryFilter, setCategoryFilter] = useState("all")
 	const [typeFilter, setTypeFilter] = useState("all")
-	const [filteredProjects, setFilteredProjects] = useState(allProjects)
+	const [filteredProjects, setFilteredProjects] = useState<Project[]>([])
 	const [visibleProjects, setVisibleProjects] = useState(6)
-	const [loading, setLoading] = useState(false)
+	const [pageLoading, setPageLoading] = useState(true)
+	const [pageError, setPageError] = useState<string | null>(null)
+	const [loadMoreLoading, setLoadMoreLoading] = useState(false)
 	const [hoveredId, setHoveredId] = useState<string | null>(null)
+
+	// Fetch all projects
+	useEffect(() => {
+		const fetchProjects = async () => {
+			try {
+				setPageLoading(true)
+				const response = await fetch(`${BASE_URL}/api/projects`)
+				if (!response.ok) {
+					throw new Error("Failed to fetch projects")
+				}
+				const data = await response.json()
+				setAllFetchedProjects(data)
+				setPageError(null)
+			} catch (err) {
+				setPageError(err instanceof Error ? err.message : "An unknown error occurred")
+				setAllFetchedProjects([]) // Clear projects on error
+			} finally {
+				setPageLoading(false)
+			}
+		}
+		fetchProjects()
+	}, [])
 
 	// Filter projects based on search term and filters
 	useEffect(() => {
-		const filtered = allProjects.filter((project) => {
+		const filtered = allFetchedProjects.filter((project) => {
 			const matchesSearch =
 				project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
 				project.description.toLowerCase().includes(searchTerm.toLowerCase())
@@ -119,21 +71,41 @@ const PortfolioPage = () => {
 		})
 
 		setFilteredProjects(filtered)
-	}, [searchTerm, categoryFilter, typeFilter])
+		setVisibleProjects(6) // Reset visible projects when filters change
+	}, [searchTerm, categoryFilter, typeFilter, allFetchedProjects])
 
 	// Load more projects
 	const loadMore = () => {
-		setLoading(true)
-		// Simulate loading delay
-		setTimeout(() => {
-			setVisibleProjects((prev) => Math.min(prev + 3, filteredProjects.length))
-			setLoading(false)
-		}, 800)
+		setLoadMoreLoading(true)
+		// Removed simulated loading delay for faster UI, can be added back if desired
+		setVisibleProjects((prev) => Math.min(prev + 3, filteredProjects.length))
+		setLoadMoreLoading(false)
 	}
 
 	// Get unique categories and types for filters
-	const categories = ["all", ...new Set(allProjects.map((p) => p.category))]
-	const types = ["all", ...new Set(allProjects.map((p) => p.type))]
+	const categories = ["all", ...new Set(allFetchedProjects.map((p) => p.category))]
+	const types = ["all", ...new Set(allFetchedProjects.map((p) => p.type))]
+
+	if (pageLoading) {
+		return (
+			<div className="flex justify-center items-center h-screen">
+				<Loader2 className="mr-2 h-8 w-8 animate-spin" />
+				<p>Loading projects...</p>
+			</div>
+		)
+	}
+
+	if (pageError) {
+		return (
+			<div className="flex flex-col justify-center items-center h-screen text-center">
+				<p className="text-red-500 text-xl mb-4">Error: {pageError}</p>
+				<p className="text-muted-foreground">Please try refreshing the page or contact support if the problem persists.</p>
+				<Button onClick={() => window.location.reload()} className="mt-4">
+					Refresh Page
+				</Button>
+			</div>
+		)
+	}
 
 	return (
 		<div className="py-12 md:py-16">
@@ -200,6 +172,10 @@ const PortfolioPage = () => {
 								<Card className="overflow-hidden h-full transition-all duration-300 hover:shadow-lg">
 									<div className="relative h-64 w-full overflow-hidden">
 										<Image
+											// Assuming project.image from backend might not have query params
+											// and might be a full URL or a relative path like the mock.
+											// If it's just a path like "/image.jpg", it will be relative to public folder.
+											// If it's a full URL, Next/Image will use it directly.
 											src={project.image || "/placeholder.svg"}
 											alt={project.alt}
 											fill
@@ -229,15 +205,19 @@ const PortfolioPage = () => {
 					</div>
 				) : (
 					<div className="text-center py-12">
-						<p className="text-muted-foreground">No projects found matching your criteria.</p>
+						<p className="text-muted-foreground">
+							{allFetchedProjects.length === 0 && !pageError
+								? "No projects available at the moment."
+								: "No projects found matching your criteria."}
+						</p>
 					</div>
 				)}
 
 				{/* Load more button */}
 				{visibleProjects < filteredProjects.length && (
 					<div className="mt-12 text-center">
-						<Button onClick={loadMore} disabled={loading}>
-							{loading ? (
+						<Button onClick={loadMore} disabled={loadMoreLoading}>
+							{loadMoreLoading ? (
 								<>
 									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 									Loading...

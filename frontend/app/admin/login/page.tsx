@@ -48,12 +48,35 @@ alert(JSON.stringify(response.status))
       if (response.ok) {
         const data = await response.json()
 
-        // Store tokens
+        // Store tokens and user details
+        // Backend's /api/auth/login response should include:
+        // { accessToken, refreshToken, user: { id, name, email, role } }
         localStorage.setItem("accessToken", data.accessToken)
         localStorage.setItem("refreshToken", data.refreshToken)
+        if (data.user) {
+          localStorage.setItem("userId", data.user.id);
+          localStorage.setItem("userName", data.user.name);
+          localStorage.setItem("userEmail", data.user.email);
+          localStorage.setItem("userRole", data.user.role);
 
-        // Redirect to admin dashboard
-        router.push("/admin")
+          // Only redirect to admin dashboard if user is Admin
+          if (data.user.role === "Admin") {
+            router.push("/admin");
+          } else {
+            // If user is not Admin, log them out of admin context and show error
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            localStorage.removeItem("userId");
+            localStorage.removeItem("userName");
+            localStorage.removeItem("userEmail");
+            localStorage.removeItem("userRole");
+            setError("Access denied. Admin privileges required.");
+            // Optionally, redirect to a general login or home page if they have other roles
+          }
+        } else {
+          // Fallback if user object is not in response, though it should be
+          setError("Login successful, but user data missing in response.");
+        }
       } else {
         const errorData = await response.json()
         setError(errorData.message || "Login failed")

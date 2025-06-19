@@ -250,3 +250,5 @@
 {"level":"info","message":"GET /api/projects","service":"floor-decoration-api","timestamp":"2025-06-19T16:30:54.851Z"}
 {"level":"info","message":"GET /api/projects","service":"floor-decoration-api","timestamp":"2025-06-19T16:32:27.809Z"}
 {"level":"info","message":"GET /api/projects","service":"floor-decoration-api","timestamp":"2025-06-19T16:32:28.113Z"}
+{"level":"info","message":"GET /api/testimonials","service":"floor-decoration-api","timestamp":"2025-06-19T16:56:56.344Z"}
+{"level":"info","message":"GET /api/testimonials","service":"floor-decoration-api","timestamp":"2025-06-19T16:56:56.774Z"}

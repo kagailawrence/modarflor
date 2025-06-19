@@ -16,7 +16,7 @@ const projects = [
     category: "Residential",
     type: "Epoxy",
     description: "A sleek, durable epoxy floor installation for a modern home garage.",
-    image: "/placeholder.svg?height=600&width=800",
+    image: "/Epoxy Flooring.jpg?height=600&width=800",
     alt: "Modern epoxy garage floor",
   },
   {
@@ -25,7 +25,7 @@ const projects = [
     category: "Residential",
     type: "Tile",
     description: "Custom tile design and installation for a luxury master bathroom.",
-    image: "/placeholder.svg?height=600&width=800",
+    image: "/Luxury Tile Bathroom.jpg?height=600&width=800",
     alt: "Luxury tile bathroom",
   },
   {
@@ -34,7 +34,7 @@ const projects = [
     category: "Commercial",
     type: "Carpet",
     description: "High-traffic carpet installation for a corporate office space.",
-    image: "/placeholder.svg?height=600&width=800",
+    image: "/Commercial Office Carpet.jpg?height=600&width=800",
     alt: "Commercial office carpet",
   },
 ]

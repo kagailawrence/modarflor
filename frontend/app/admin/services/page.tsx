@@ -20,17 +20,16 @@ import {
 import { BASE_URL } from "@/lib/baseUrl"
 import { useToast } from "@/components/ui/use-toast"
 import { Badge } from "@/components/ui/badge"
+import { authFetch } from "@/lib/authFetch"
 
 
 interface Service {
   id: string
   title: string
   description: string
-  image?: string // Optional: URL to the service image
-  alt?: string   // Alt text for the image
-  order?: number // Optional: for ordering services
-  features?: string[] // Optional: list of features
-  // Remove 'price' if not part of your backend model for services, or adjust as needed
+  image_url?: string // Use image_url from backend
+  order_index?: number // Use order_index from backend
+  features?: string[] // Use array of strings for features
 }
 
 export default function AdminServices() {
@@ -48,24 +47,20 @@ export default function AdminServices() {
     setLoading(true)
     setError(null)
     try {
-      const token = localStorage.getItem("accessToken")
-      // No auth needed for public GET /api/services as per previous subtasks.
-      // If auth becomes required, uncomment the token check and header.
-      // if (!token) {
-      //   setError("Authentication token not found. Please login again.")
-      //   setLoading(false)
-      //   return
-      // }
       const response = await fetch(`${BASE_URL}/api/services`, {
-        // headers: { Authorization: `Bearer ${token}` },
+        // No auth needed for public GET /api/services
       })
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.message || "Failed to fetch services")
       }
       const data = await response.json()
-      // Assuming the API returns an array of services directly, or { services: [] }
-      setServices(Array.isArray(data) ? data : data.services || [])
+      // Normalize backend data to match frontend expectations
+      const normalized = (Array.isArray(data) ? data : data.services || []).map((service: any) => ({
+        ...service,
+        features: service.features ? service.features.map((f: any) => f.description) : [],
+      }))
+      setServices(normalized)
     } catch (err) {
       console.error("Error fetching services:", err)
       setError(err instanceof Error ? err.message : "An unknown error occurred.")
@@ -82,7 +77,7 @@ export default function AdminServices() {
         toast({ title: "Error", description: "Authentication token not found.", variant: "destructive" })
         return
       }
-      const response = await fetch(`${BASE_URL}/api/services/${serviceId}`, {
+      const response = await authFetch(`${BASE_URL}/api/services/${serviceId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -171,11 +166,11 @@ export default function AdminServices() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredServices.map(service => (
                 <Card key={service.id} className="flex flex-col">
-                  {service.image && (
+                  {service.image_url && (
                     <div className="relative h-40 w-full">
                       <Image
-                        src={service.image}
-                        alt={service.alt || service.title}
+                        src={service.image_url}
+                        alt={service.title}
                         fill
                         className="object-cover rounded-t-lg"
                       />
@@ -183,7 +178,7 @@ export default function AdminServices() {
                   )}
                   <CardContent className="p-4 flex flex-col flex-grow">
                     <h2 className="font-semibold text-lg mb-1">{service.title}</h2>
-                    {service.order !== undefined && <Badge variant="outline" className="w-fit mb-2">Order: {service.order}</Badge>}
+                    {service.order_index !== undefined && <Badge variant="outline" className="w-fit mb-2">Order: {service.order_index}</Badge>}
                     <p className="text-muted-foreground text-sm mb-3 line-clamp-3 flex-grow">{service.description}</p>
                     {service.features && service.features.length > 0 && (
                       <div className="mb-3">

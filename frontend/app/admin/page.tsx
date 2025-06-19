@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { FolderOpen, MessageSquare, Settings, Users, TrendingUp, Eye } from "lucide-react"
+import { FolderOpen, MessageSquare, Settings, Users, TrendingUp, Eye, AlertCircle, Loader2 } from "lucide-react"
+import { Button } from "react-day-picker";
 
 interface RecentProject {
   id: number;

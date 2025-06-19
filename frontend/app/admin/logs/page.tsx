@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, AlertCircle, RefreshCw } from "lucide-react"
 import { BASE_URL } from "@/lib/baseUrl"
 import { useToast } from "@/components/ui/use-toast"
+import { authFetch } from "@/lib/authFetch"
+import { useRouter } from "next/navigation"
 
 type LogType = "combined" | "error";
 
@@ -16,6 +18,7 @@ export default function AdminLogsPage() {
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
+  const router = useRouter()
 
   const fetchLogs = useCallback(async (logType: LogType) => {
     setLoading(true)
@@ -26,16 +29,34 @@ export default function AdminLogsPage() {
       if (!token) {
         setError("Authentication token not found. Please login again.")
         toast({ title: "Authentication Error", description: "Please log in again.", variant: "destructive"})
-        // router.push("/admin/login"); // Consider redirecting
+        router.push("/admin/login")
         setLoading(false)
         return
       }
-      const response = await fetch(`${BASE_URL}/api/logs?file=${logType}`, {
+      const response = await authFetch(`${BASE_URL}/api/logs?file=${logType}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: "Failed to fetch logs and parse error response."}))
+        // If error is auth-related, clear tokens and redirect
+        if (
+          response.status === 401 ||
+          response.status === 403 ||
+          (errorData.message && errorData.message.toLowerCase().includes("token"))
+        ) {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+          localStorage.removeItem("userId");
+          localStorage.removeItem("userName");
+          localStorage.removeItem("userEmail");
+          localStorage.removeItem("userRole");
+          setError("Session expired. Please log in again.");
+          toast({ title: "Session Expired", description: "Please log in again.", variant: "destructive" })
+          router.push("/admin/login")
+          setLoading(false)
+          return;
+        }
         throw new Error(errorData.message || `Failed to fetch logs: ${response.statusText}`)
       }
 
@@ -49,7 +70,7 @@ export default function AdminLogsPage() {
     } finally {
       setLoading(false)
     }
-  }, [toast]) // Added toast to dependency array
+  }, [toast, router])
 
   useEffect(() => {
     fetchLogs(selectedLogType)
@@ -62,6 +83,10 @@ export default function AdminLogsPage() {
   const handleRefresh = () => {
     fetchLogs(selectedLogType)
   }
+
+  // Sanitize log content to prevent accidental HTML injection and hydration mismatch
+  const sanitizeLogContent = (content: string) =>
+    content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
   return (
     <div className="p-4 md:p-6 space-y-6">
@@ -106,7 +131,7 @@ export default function AdminLogsPage() {
           )}
           {!loading && !error && logContent && (
             <pre className="h-full w-full overflow-auto text-xs bg-muted/30 dark:bg-muted/50 p-4 rounded-md whitespace-pre-wrap break-all">
-              <code>{logContent}</code>
+              <code>{sanitizeLogContent(logContent)}</code>
             </pre>
           )}
            {!loading && !error && !logContent && (

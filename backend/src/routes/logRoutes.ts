@@ -1,7 +1,7 @@
 import express from 'express';
 import { getLogs } from '../controllers/logController';
 import { authenticateJWT } from '../middleware/auth'; // Assuming this is the correct path
-import { authorize } from '../middleware/errorHandler'; // Assuming 'authorize' is for roles
+import { authorize } from '../middleware/auth'; // Assuming 'authorize' is for roles
 
 const router = express.Router();
 

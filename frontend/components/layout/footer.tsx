@@ -10,9 +10,8 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="space-y-4">
-             <Link href="/" className="flex items-center space-x-2">
+            <Link href="/" className="flex items-center space-x-2">
           <span className="text-2xl font-bold text-primary">Modar<span className="text-2xl font-light">Flor</span></span>
-          
         </Link>
             <p className="text-muted-foreground">
               Premium floor decoration solutions for residential and commercial spaces.
@@ -36,7 +35,7 @@ const Footer = () => {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Quick Links</h3>
             <ul className="space-y-2">
-              {["Services", "Portfolio", "About Us", "Testimonials", "FAQs"].map((item) => (
+              {["Services", "Portfolio", "About Us", "Reviews", "FAQs"].map((item) => (
                 <li key={item}>
                   <Link
                     href={`/${item.toLowerCase().replace(/\s+/g, "-")}`}

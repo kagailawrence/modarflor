@@ -1,6 +1,6 @@
 import type { Request, Response } from "express"
 import bcrypt from "bcrypt"
-import { prisma } from "../prismaClient"
+import { query } from "../database/connection"
 import { catchAsync, AppError } from "../middleware/errorHandler"
 import { validateUser } from "../utils/validation"
 
@@ -11,19 +11,11 @@ export const getAllUsers = catchAsync(async (req: Request, res: Response) => {
     throw new AppError("Unauthorized: Admin access required", 403)
   }
 
-  const users = await prisma.user.findMany({
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-    orderBy: { createdAt: "desc" },
-  })
+  const result = await query(
+    `SELECT id, email, name, role, created_at, updated_at FROM users ORDER BY created_at DESC`
+  )
 
-  res.json(users)
+  res.json(result.rows)
 })
 
 // Get user by ID (admin or self)
@@ -35,17 +27,11 @@ export const getUserById = catchAsync(async (req: Request, res: Response) => {
     throw new AppError("Unauthorized: You can only access your own data", 403)
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  })
+  const result = await query(
+    `SELECT id, email, name, role, created_at, updated_at FROM users WHERE id = $1`,
+    [id]
+  )
+  const user = result.rows[0]
 
   if (!user) {
     throw new AppError("User not found", 404)
@@ -70,11 +56,9 @@ export const createUser = catchAsync(async (req: Request, res: Response) => {
   const { email, password, name, role } = req.body
 
   // Check if user already exists
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
-  })
+  const existing = await query(`SELECT * FROM users WHERE email = $1`, [email])
 
-  if (existingUser) {
+  if (existing && existing.rowCount && existing.rowCount > 0) {
     throw new AppError("User with this email already exists", 400)
   }
 
@@ -83,24 +67,12 @@ export const createUser = catchAsync(async (req: Request, res: Response) => {
   const hashedPassword = await bcrypt.hash(password, salt)
 
   // Create user
-  const user = await prisma.user.create({
-    data: {
-      email,
-      password: hashedPassword,
-      name,
-      role: role || "Viewer",
-    },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  })
+  const result = await query(
+    `INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4) RETURNING id, email, name, role, created_at, updated_at`,
+    [email, hashedPassword, name, role || "Viewer"]
+  )
 
-  res.status(201).json(user)
+  res.status(201).json(result.rows[0])
 })
 
 // Update user (admin or self)
@@ -115,11 +87,9 @@ export const updateUser = catchAsync(async (req: Request, res: Response) => {
   const { name, email, role, password } = req.body
 
   // Check if user exists
-  const existingUser = await prisma.user.findUnique({
-    where: { id },
-  })
+  const existing = await query(`SELECT * FROM users WHERE id = $1`, [id])
 
-  if (!existingUser) {
+  if (existing.rowCount === 0) {
     throw new AppError("User not found", 404)
   }
 
@@ -128,33 +98,31 @@ export const updateUser = catchAsync(async (req: Request, res: Response) => {
 
   if (name) updateData.name = name
   if (email) updateData.email = email
+  if (role && req.user?.role === "Admin") updateData.role = role
 
-  // Only admin can change roles
-  if (role && req.user?.role === "Admin") {
-    updateData.role = role
-  }
-
+  let hashedPassword
   // If password is provided, hash it
   if (password) {
     const salt = await bcrypt.genSalt(12)
-    updateData.password = await bcrypt.hash(password, salt)
+    hashedPassword = await bcrypt.hash(password, salt)
   }
 
-  // Update user
-  const updatedUser = await prisma.user.update({
-    where: { id },
-    data: updateData,
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  })
+  const result = await query(
+    `UPDATE users SET name = $1, email = $2, role = $3${
+      password ? ", password = $4" : ""
+    }, updated_at = CURRENT_TIMESTAMP WHERE id = $5 RETURNING id, email, name, role, created_at, updated_at`,
+    password
+      ? [
+          name || existing.rows[0].name,
+          email || existing.rows[0].email,
+          role || existing.rows[0].role,
+          hashedPassword,
+          id,
+        ]
+      : [name || existing.rows[0].name, email || existing.rows[0].email, role || existing.rows[0].role, id]
+  )
 
-  res.json(updatedUser)
+  res.json(result.rows[0])
 })
 
 // Delete user (admin only)
@@ -172,18 +140,14 @@ export const deleteUser = catchAsync(async (req: Request, res: Response) => {
   }
 
   // Check if user exists
-  const existingUser = await prisma.user.findUnique({
-    where: { id },
-  })
+  const existing = await query(`SELECT * FROM users WHERE id = $1`, [id])
 
-  if (!existingUser) {
+  if (existing.rowCount === 0) {
     throw new AppError("User not found", 404)
   }
 
   // Delete user
-  await prisma.user.delete({
-    where: { id },
-  })
+  await query(`DELETE FROM users WHERE id = $1`, [id])
 
   res.json({ message: "User deleted successfully" })
 })

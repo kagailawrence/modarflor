@@ -1,54 +1,16 @@
-"use client"
+import ServicesClient from "./ServicesClient"
+import { BASE_URL } from "@/lib/baseUrl"
 
-import Image from "next/image"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { ArrowRight, CheckCircle } from "lucide-react"
-import { useEffect, useState } from "react"
-import { BASE_URL } from "../../../lib/baseUrl"
-
-interface Service {
-  id: number
-  title: string
-  description: string
-  image: string
-  alt: string
-  features: string[]
-}
-
-export default function ServicesPage() {
-  const [services, setServices] = useState<Service[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const fetchServices = async () => {
-      try {
-        const response = await fetch(`${BASE_URL}/api/services`)
-        if (!response.ok) {
-          throw new Error("Failed to fetch services")
-        }
-        const data = await response.json()
-        setServices(data)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An unknown error occurred")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchServices()
-  }, [])
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <p>Loading services...</p>
-      </div>
-    )
+export default async function ServicesPage() {
+  let services = []
+  let error: string | null = null
+  try {
+    const response = await fetch(`${BASE_URL}/api/services`, { cache: "no-store" })
+    if (!response.ok) throw new Error("Failed to fetch services")
+    services = await response.json()
+  } catch (err: any) {
+    error = err?.message || "An unknown error occurred"
   }
-
   if (error) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -56,114 +18,5 @@ export default function ServicesPage() {
       </div>
     )
   }
-
-  return (
-    <div className="py-12 md:py-16">
-      <div className="container mx-auto px-4">
-        {/* Hero section */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Our Services</h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            We offer a comprehensive range of flooring solutions to meet your residential and commercial needs.
-          </p>
-        </div>
-
-        {/* Services grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-          {services.map((service) => (
-            <Card key={service.id} className="overflow-hidden h-full service-card">
-              <div className="relative h-48 w-full overflow-hidden">
-                <Image src={service.image || "/placeholder.svg"} alt={service.alt} fill className="object-cover" />
-              </div>
-              <CardContent className="p-6">
-                <h3 className="text-xl font-semibold mb-3">{service.title}</h3>
-                <p className="text-muted-foreground mb-4">{service.description}</p>
-                <ul className="mb-4 space-y-2">
-                  {service.features.slice(0, 3).map((feature, index) => (
-                    <li key={index} className="flex items-center text-sm">
-                      <CheckCircle className="h-4 w-4 mr-2 text-primary" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href={`/services/${service.id}`}
-                  className="text-primary font-medium inline-flex items-center hover:underline"
-                >
-                  Learn More
-                  <ArrowRight className="ml-1 h-4 w-4" />
-                </Link>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Process section */}
-        <div className="bg-muted/30 rounded-lg p-8 md:p-12 mb-16">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Our Process</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              We follow a streamlined process to ensure your flooring project is completed efficiently and to the
-              highest standards.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              {
-                step: 1,
-                title: "Consultation",
-                description: "We discuss your needs, preferences, and budget to determine the best flooring solution.",
-              },
-              {
-                step: 2,
-                title: "Measurement & Quote",
-                description: "We measure your space and provide a detailed quote with no hidden costs.",
-              },
-              {
-                step: 3,
-                title: "Installation",
-                description: "Our expert team installs your new flooring with precision and attention to detail.",
-              },
-              {
-                step: 4,
-                title: "Final Inspection",
-                description: "We conduct a thorough inspection to ensure everything meets our high standards.",
-              },
-            ].map((item) => (
-              <div key={item.step} className="text-center">
-                <div className="bg-primary text-primary-foreground w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="font-bold">{item.step}</span>
-                </div>
-                <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
-                <p className="text-muted-foreground">{item.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* CTA section */}
-        <div className="bg-primary text-primary-foreground rounded-lg p-8 md:p-12 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
-          <p className="text-lg opacity-90 max-w-2xl mx-auto mb-8">
-            Contact us today for a free consultation and quote. Our team of experts is ready to help you choose the
-            perfect flooring solution for your space.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button size="lg" variant="secondary" className="font-medium" asChild>
-              <Link href="/contact">Get a Free Quote</Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="bg-primary-foreground/10 backdrop-blur-sm border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground font-medium"
-              asChild
-            >
-              <Link href="/contact">Contact Us</Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+  return <ServicesClient services={services} />
 }

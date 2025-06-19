@@ -24,12 +24,6 @@ interface ProjectImageInput { // For client-side state, includes File object
   file?: File
 }
 
-interface ProjectImagePayload { // For sending to backend, only URL
-  url: string
-  alt: string
-  isFeatured: boolean
-}
-
 export default function NewProject() {
   const router = useRouter()
   const { toast } = useToast()
@@ -139,25 +133,10 @@ export default function NewProject() {
     setImages((prev) => prev.map((img) => (img.id === id ? { ...img, alt } : img)))
   }
 
-  // This function needs to be implemented based on your backend file upload strategy.
-  // For now, it's a placeholder. If your backend accepts direct image URLs,
-  // and you're hosting images elsewhere, this function would get that URL.
-  // If backend handles raw file uploads (e.g. to S3, Cloudinary), this would do that.
-  const uploadImageAndGetURL = async (file: File): Promise<string> => {
-    // Placeholder: In a real app, upload `file` to a service and get its public URL.
-    // For demonstration, we'll just return a mock URL.
-    // You might use Vercel Blob, AWS S3, Cloudinary, etc.
-    console.log("Simulating upload for:", file.name)
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
-    // IMPORTANT: Replace this with your actual image upload logic
-    return `/uploads/mock/${file.name}`; // This URL must be accessible by your backend/frontend
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setFormError(null)
-
     if (images.length === 0) {
       setFormError("Please upload at least one image for the project.")
       setLoading(false)
@@ -170,50 +149,37 @@ export default function NewProject() {
       toast({ title: "Missing Fields", description: "Category and Type are required.", variant: "destructive"})
       return
     }
-
-
     try {
       const token = localStorage.getItem("accessToken")
       if (!token) {
         setFormError("Authentication error. Please log in again.")
         setLoading(false)
         toast({ title: "Authentication Error", description: "Please log in again.", variant: "destructive"})
-        router.push("/admin/login") // Redirect to login
+        router.push("/admin/login")
         return
       }
-
-      const uploadedImagePayloads: ProjectImagePayload[] = await Promise.all(
-        images.map(async (img) => {
-          let imageUrl = img.url
-          if (img.file) { // If there's a file, it means it's a new upload
-            imageUrl = await uploadImageAndGetURL(img.file)
-          }
-          return { url: imageUrl, alt: img.alt, isFeatured: img.isFeatured }
-        }),
-      )
-
-      const projectData = {
-        ...formData,
-        images: uploadedImagePayloads,
-      }
-
+      const fd = new FormData()
+      fd.append("title", formData.title)
+      fd.append("description", formData.description)
+      fd.append("category", formData.category)
+      fd.append("type", formData.type)
+      images.forEach((img, idx) => {
+        if (img.file) fd.append("images", img.file)
+      })
+      // Send alt/isFeatured as JSON for each image (order matches files)
+      const meta = images.map(img => ({ alt: img.alt, isFeatured: img.isFeatured }))
+      fd.append("images", JSON.stringify(meta))
       const response = await fetch(`${BASE_URL}/api/projects`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(projectData),
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
       })
-
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.message || "Failed to create project")
       }
-
       toast({ title: "Success!", description: "Project created successfully." })
-      router.push("/admin/projects") // Redirect to projects list
-
+      router.push("/admin/projects")
     } catch (err) {
       console.error("Error creating project:", err)
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred."

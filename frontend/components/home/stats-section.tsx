@@ -5,7 +5,7 @@ import { motion, useInView } from "framer-motion"
 
 const stats = [
   { id: 1, value: 500, label: "Projects Completed", suffix: "+" },
-  { id: 2, value: 15, label: "Years of Experience", suffix: "+" },
+  { id: 2, value: 5, label: "Years of Experience", suffix: "+" },
   { id: 3, value: 50, label: "Team Members", suffix: "" },
   { id: 4, value: 98, label: "Client Satisfaction", suffix: "%" },
 ]

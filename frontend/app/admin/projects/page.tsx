@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { BASE_URL } from "@/lib/baseUrl" // Import BASE_URL
 import { useToast } from "@/components/ui/use-toast" // For user feedback
+import { authFetch } from "@/lib/authFetch"
 
 // Define an interface for the project structure
 interface ProjectImage {
@@ -38,7 +39,6 @@ interface Project {
   type: string
   images: ProjectImage[]
   createdAt: string // Or Date
-  // Add any other relevant fields from your API
 }
 
 export default function AdminProjects() {
@@ -49,6 +49,7 @@ export default function AdminProjects() {
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("all")
   const { toast } = useToast()
+  // Add any other relevant fields from your API
 
   useEffect(() => {
     fetchProjects()
@@ -60,14 +61,12 @@ export default function AdminProjects() {
     try {
       const token = localStorage.getItem("accessToken")
       if (!token) {
-        // This should ideally be handled by AdminLayout, but good to have a fallback
         setError("Authentication token not found. Please login again.")
         setLoading(false)
-        // Consider redirecting to login here as well if layout fails
         return
       }
 
-      const response = await fetch(`${BASE_URL}/api/projects`, {
+      const response = await authFetch(`${BASE_URL}/api/projects`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -77,12 +76,14 @@ export default function AdminProjects() {
         const errorData = await response.json()
         throw new Error(errorData.message || `Failed to fetch projects: ${response.statusText}`)
       }
-      const data: Project[] = await response.json()
+      // Support both array and { data: array } shape
+      const result = await response.json()
+      const data = Array.isArray(result) ? result : (result && Array.isArray(result.data) ? result.data : [])
       setProjects(data)
     } catch (err) {
       console.error("Error fetching projects:", err)
       setError(err instanceof Error ? err.message : "An unknown error occurred while fetching projects.")
-      setProjects([]) // Clear projects on error
+      setProjects([])
     } finally {
       setLoading(false)
     }
@@ -96,7 +97,7 @@ export default function AdminProjects() {
         return
       }
 
-      const response = await fetch(`${BASE_URL}/api/projects/${id}`, {
+      const response = await authFetch(`${BASE_URL}/api/projects/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

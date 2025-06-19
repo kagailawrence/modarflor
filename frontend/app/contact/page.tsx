@@ -196,7 +196,7 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h3 className="font-medium">Phone</h3>
-                      <p className="text-muted-foreground">1-800-FLOOR-PRO</p>
+                      <p className="text-muted-foreground">+254-722 843995</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -208,7 +208,7 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h3 className="font-medium">Email</h3>
-                      <p className="text-muted-foreground">info@ ModarFlor.com</p>
+                      <p className="text-muted-foreground">info@ModarFlor-ke.com</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -221,9 +221,9 @@ export default function ContactPage() {
                     <div>
                       <h3 className="font-medium">Address</h3>
                       <p className="text-muted-foreground">
-                        123 Floor Avenue, Suite 456
+                        Summit House Moi Avenue, Room M9
                         <br />
-                        Decor City, FL 12345
+                        Nairobi, Kenya
                       </p>
                     </div>
                   </CardContent>
@@ -252,14 +252,14 @@ export default function ContactPage() {
               <CardContent className="p-0">
                 <div className="aspect-video w-full">
                   <iframe
-                    src="https://www.google.com/maps?q=-1.286389,36.817223&z=15&output=embed"
+                    src="https://www.google.com/maps?q=Summit+House+Moi+Avenue+Nairobi+Kenya&z=17&output=embed"
                     width="100%"
                     height="100%"
                     style={{ border: 0 }}
                     allowFullScreen
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
-                    title="CBD Nairobi Kenya Location"
+                    title="Summit House Moi Avenue, Nairobi Kenya Location"
                     className="rounded-b-lg"
                   ></iframe>
                 </div>

@@ -21,6 +21,8 @@ import { BASE_URL } from "@/lib/baseUrl"
 import { useToast } from "@/components/ui/use-toast"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useRouter } from "next/navigation"
+import { authFetch } from "@/lib/authFetch"
 
 
 interface User {
@@ -66,7 +68,7 @@ export default function AdminUsers() {
         clearAuthAndRedirect(); // Should be caught by layout, but defensive
         return
       }
-      const response = await fetch(`${BASE_URL}/api/users`, {
+      const response = await authFetch(`${BASE_URL}/api/users`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!response.ok) {
@@ -79,11 +81,11 @@ export default function AdminUsers() {
       }
       const data: User[] = await response.json()
       setUsers(Array.isArray(data) ? data : (data as any).users || [])
-    } catch (err) {
-      console.error("Error fetching users:", err)
+    } catch (error) {
+      console.error("Error fetching users:", error)
       // Avoid setting error if redirection happened or is about to happen
-      if (!(err instanceof Error && (err.message.includes("401") || err.message.includes("403")))) {
-         setError(err instanceof Error ? err.message : "An unknown error occurred.")
+      if (!(error instanceof Error && (error.message.includes("401") || error.message.includes("403")))) {
+         setError(error instanceof Error ? error.message : "An unknown error occurred.")
       }
       setUsers([])
     } finally {
@@ -98,7 +100,7 @@ export default function AdminUsers() {
         clearAuthAndRedirect();
         return
       }
-      const response = await fetch(`${BASE_URL}/api/users/${userId}`, {
+      const response = await authFetch(`${BASE_URL}/api/users/${userId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -124,15 +126,6 @@ export default function AdminUsers() {
           variant: "destructive",
         })
       }
-    }
-  }
-
-  const filteredUsers = users.filter(u =>
-      toast({
-        title: "Error",
-        description: err instanceof Error ? err.message : "Could not delete user.",
-        variant: "destructive",
-      })
     }
   }
 
@@ -198,7 +191,7 @@ export default function AdminUsers() {
             />
           </div>
 
-          {filtereUsers.length === 0 ? (
+          {filteredUsers.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">
                 {users.length === 0 ? "No users found." : "No users found matching your search."}
@@ -243,7 +236,7 @@ export default function AdminUsers() {
                     </div>
 
                     <div className="mt-auto flex gap-2 pt-3 border-t border-muted/50">
-                       <Button size="sm" variant="outline" asChild>
+                        <Button size="sm" variant="outline" asChild>
                         <Link href={`/admin/users/edit/${u.id}`}>
                           <Edit className="w-4 h-4 mr-1.5" /> Edit
                         </Link>

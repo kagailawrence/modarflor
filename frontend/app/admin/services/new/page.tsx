@@ -16,9 +16,9 @@ import { useToast } from "@/components/ui/use-toast"
 interface ServiceFormData {
   title: string
   description: string
-  image: string // URL for the image
+  image: File | null // File for the image
   alt: string   // Alt text for the image
-  order: number | string // Can be string then parsed
+  order: number | string
   features: string[]
 }
 
@@ -29,16 +29,20 @@ export default function NewServicePage() {
   const [formData, setFormData] = useState<ServiceFormData>({
     title: "",
     description: "",
-    image: "",
+    image: null,
     alt: "",
-    order: "", // Initialize as empty string, convert to number on submit
-    features: [""], // Start with one empty feature input
+    order: "",
+    features: [""],
   })
   const [formError, setFormError] = useState<string | null>(null)
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    const { name, value, type } = e.target
+    if (type === "file") {
+      setFormData((prev) => ({ ...prev, [name]: (e.target as HTMLInputElement).files?.[0] || null }))
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }))
+    }
     setFormError(null)
   }
 
@@ -64,7 +68,6 @@ export default function NewServicePage() {
     e.preventDefault()
     setLoading(true)
     setFormError(null)
-
     const orderValue = formData.order === "" ? undefined : Number(formData.order)
     if (formData.order !== "" && (isNaN(orderValue as number) || !Number.isInteger(orderValue))) {
         setFormError("Order must be a whole number if provided.")
@@ -72,13 +75,7 @@ export default function NewServicePage() {
         toast({ title: "Invalid Input", description: "Order must be a whole number.", variant: "destructive"})
         return
     }
-
-    const payload = {
-      ...formData,
-      features: formData.features.filter(f => f.trim() !== ""), // Remove empty features
-      order: orderValue,
-    }
-
+    const features = formData.features.filter(f => f.trim() !== "")
     try {
       const token = localStorage.getItem("accessToken")
       if (!token) {
@@ -88,21 +85,22 @@ export default function NewServicePage() {
         setLoading(false)
         return
       }
-
+      const fd = new FormData()
+      fd.append("title", formData.title)
+      fd.append("description", formData.description)
+      if (formData.image) fd.append("image", formData.image)
+      fd.append("alt", formData.alt)
+      if (orderValue !== undefined) fd.append("order", String(orderValue))
+      features.forEach(f => fd.append("features", f))
       const response = await fetch(`${BASE_URL}/api/services`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
       })
-
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.message || "Failed to create service")
       }
-
       toast({ title: "Success!", description: "Service created successfully." })
       router.push("/admin/services")
     } catch (err) {
@@ -149,8 +147,8 @@ export default function NewServicePage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="image">Image URL</Label>
-                    <Input id="image" name="image" value={formData.image} onChange={handleInputChange} placeholder="https://example.com/image.jpg" />
+                    <Label htmlFor="image">Image File</Label>
+                    <Input id="image" name="image" type="file" accept="image/*" onChange={handleInputChange} required />
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="alt">Image Alt Text</Label>

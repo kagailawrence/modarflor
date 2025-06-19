@@ -2,10 +2,11 @@ import { Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
 
+// Use process.cwd() for robust log file path resolution
+const LOG_FILES_BASE_PATH = process.cwd();
+
 // Define the allowed log files and their paths relative to the project root
 // IMPORTANT: Adjust these paths if your log files are located elsewhere
-const LOG_FILES_BASE_PATH = path.join(__dirname, '../../../..'); // Assuming backend/src/controllers, go up to project root
-
 const ALLOWED_LOG_FILES: { [key: string]: string } = {
     combined: path.join(LOG_FILES_BASE_PATH, 'combined.log'),
     error: path.join(LOG_FILES_BASE_PATH, 'error.log'),

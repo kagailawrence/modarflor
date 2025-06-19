@@ -1,5 +1,5 @@
 import type { Request, Response } from "express"
-import { prisma } from "../prismaClient"
+import { query } from "../database/connection"
 import { catchAsync, AppError } from "../middleware/errorHandler"
 import { validateTestimonial } from "../utils/validation"
 
@@ -7,18 +7,18 @@ import { validateTestimonial } from "../utils/validation"
 export const getAllTestimonials = catchAsync(async (req: Request, res: Response) => {
   const page = Number.parseInt(req.query.page as string) || 1
   const limit = Number.parseInt(req.query.limit as string) || 10
-  const skip = (page - 1) * limit
+  const offset = (page - 1) * limit
 
-  const [testimonials, total] = await Promise.all([
-    prisma.testimonial.findMany({
-      skip,
-      take: limit,
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.testimonial.count(),
+  const [testimonialsResult, countResult] = await Promise.all([
+    query(
+      `SELECT * FROM testimonials ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    ),
+    query(`SELECT COUNT(*) as total FROM testimonials`),
   ])
 
-  // Calculate pagination info
+  const testimonials = testimonialsResult.rows
+  const total = Number.parseInt(countResult.rows[0].total)
   const totalPages = Math.ceil(total / limit)
   const hasNextPage = page < totalPages
   const hasPrevPage = page > 1
@@ -39,111 +39,57 @@ export const getAllTestimonials = catchAsync(async (req: Request, res: Response)
 // Get testimonial by ID
 export const getTestimonialById = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params
-
-  const testimonial = await prisma.testimonial.findUnique({
-    where: { id },
-  })
-
-  if (!testimonial) {
-    throw new AppError("Testimonial not found", 404)
-  }
-
+  const result = await query(`SELECT * FROM testimonials WHERE id = $1`, [id])
+  const testimonial = result.rows[0]
+  if (!testimonial) throw new AppError("Testimonial not found", 404)
   res.json(testimonial)
 })
 
 // Create new testimonial
 export const createTestimonial = catchAsync(async (req: Request, res: Response) => {
-  // Validate input
   const { error } = validateTestimonial(req.body)
-  if (error) {
-    throw new AppError(error.details[0].message, 400)
-  }
-
+  if (error) throw new AppError(error.details[0].message, 400)
   const { name, role, content, rating, imageUrl } = req.body
-
-  const testimonial = await prisma.testimonial.create({
-    data: {
-      name,
-      role,
-      content,
-      rating,
-      imageUrl,
-    },
-  })
-
-  res.status(201).json(testimonial)
+  const result = await query(
+    `INSERT INTO testimonials (name, role, content, rating, image_url)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING *`,
+    [name, role, content, rating, imageUrl]
+  )
+  res.status(201).json(result.rows[0])
 })
 
 // Update testimonial
 export const updateTestimonial = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params
-
-  // Validate input
   const { error } = validateTestimonial(req.body)
-  if (error) {
-    throw new AppError(error.details[0].message, 400)
-  }
-
+  if (error) throw new AppError(error.details[0].message, 400)
   const { name, role, content, rating, imageUrl } = req.body
-
   // Check if testimonial exists
-  const existingTestimonial = await prisma.testimonial.findUnique({
-    where: { id },
-  })
-
-  if (!existingTestimonial) {
-    throw new AppError("Testimonial not found", 404)
-  }
-
-  // Update testimonial
-  const updatedTestimonial = await prisma.testimonial.update({
-    where: { id },
-    data: {
-      name,
-      role,
-      content,
-      rating,
-      imageUrl,
-    },
-  })
-
-  res.json(updatedTestimonial)
+  const existing = await query(`SELECT * FROM testimonials WHERE id = $1`, [id])
+  if (existing.rowCount === 0) throw new AppError("Testimonial not found", 404)
+  const result = await query(
+    `UPDATE testimonials SET name = $1, role = $2, content = $3, rating = $4, image_url = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $6 RETURNING *`,
+    [name, role, content, rating, imageUrl, id]
+  )
+  res.json(result.rows[0])
 })
 
 // Delete testimonial
 export const deleteTestimonial = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params
-
-  // Check if testimonial exists
-  const existingTestimonial = await prisma.testimonial.findUnique({
-    where: { id },
-  })
-
-  if (!existingTestimonial) {
-    throw new AppError("Testimonial not found", 404)
-  }
-
-  // Delete testimonial
-  await prisma.testimonial.delete({
-    where: { id },
-  })
-
+  const existing = await query(`SELECT * FROM testimonials WHERE id = $1`, [id])
+  if (existing.rowCount === 0) throw new AppError("Testimonial not found", 404)
+  await query(`DELETE FROM testimonials WHERE id = $1`, [id])
   res.json({ message: "Testimonial deleted successfully" })
 })
 
 // Get featured testimonials
 export const getFeaturedTestimonials = catchAsync(async (req: Request, res: Response) => {
   const limit = Number.parseInt(req.query.limit as string) || 5
-
-  const testimonials = await prisma.testimonial.findMany({
-    where: {
-      rating: {
-        gte: 4, // Get testimonials with rating >= 4
-      },
-    },
-    take: limit,
-    orderBy: [{ rating: "desc" }, { createdAt: "desc" }],
-  })
-
-  res.json(testimonials)
+  const result = await query(
+    `SELECT * FROM testimonials WHERE rating >= 4 ORDER BY rating DESC, created_at DESC LIMIT $1`,
+    [limit]
+  )
+  res.json(result.rows)
 })

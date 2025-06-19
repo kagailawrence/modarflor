@@ -8,13 +8,14 @@ import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { LayoutDashboard, FolderOpen, MessageSquare, Settings, Users, LogOut, Menu, X, Home } from "lucide-react"
+import { LayoutDashboard, FolderOpen, MessageSquare, Settings, Users, LogOut, Menu, X, Home, AlertCircle } from "lucide-react"
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Projects", href: "/admin/projects", icon: FolderOpen },
   { name: "Services", href: "/admin/services", icon: Settings },
   { name: "Testimonials", href: "/admin/testimonials", icon: MessageSquare },
+  { name: "FAQs", href: "/admin/faqs", icon: AlertCircle }, // <-- Add FAQ to sidebar
   { name: "Users", href: "/admin/users", icon: Users },
   { name: "Logs", href: "/admin/logs", icon: FolderOpen },
 ]

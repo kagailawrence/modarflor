@@ -2,6 +2,7 @@ import type { Request, Response } from "express"
 import { query, transaction } from "../database/connection"
 import { catchAsync, AppError } from "../middleware/errorHandler"
 import { validateProject } from "../utils/validation"
+import path from "path"
 
 // Get all projects with pagination and filtering
 export const getAllProjects = catchAsync(async (req: Request, res: Response) => {
@@ -124,13 +125,29 @@ export const getProjectById = catchAsync(async (req: Request, res: Response) => 
 
 // Create new project
 export const createProject = catchAsync(async (req: Request, res: Response) => {
-  // Validate input
+  // Validate input (title, description, etc.)
   const { error } = validateProject(req.body)
   if (error) {
     throw new AppError(error.details[0].message, 400)
   }
 
-  const { title, description, category, type, images } = req.body
+  const { title, description, category, type } = req.body
+  // Handle uploaded images
+  let images: any[] = []
+  if (req.files && Array.isArray(req.files)) {
+    images = (req.files as Express.Multer.File[]).map((file) => ({
+      url: `/uploads/${path.basename(file.path)}`,
+      alt: title,
+      isFeatured: false,
+    }))
+  } else if (req.body.images) {
+    // Support for images as URLs in body (optional)
+    try {
+      images = JSON.parse(req.body.images)
+    } catch {
+      images = req.body.images
+    }
+  }
 
   const result = await transaction(async (client) => {
     // Insert project
@@ -144,27 +161,19 @@ export const createProject = catchAsync(async (req: Request, res: Response) => {
 
     // Insert images
     if (images && images.length > 0) {
-      const imageValues = images
-        .map((img: any, index: number) => `($1, $${index * 3 + 2}, $${index * 3 + 3}, $${index * 3 + 4})`)
-        .join(", ")
-
-      const imageParams = [project.id]
-      images.forEach((img: any) => {
-        imageParams.push(img.url, img.alt || title, img.isFeatured || false)
-      })
-
-      const imageQuery = `
-        INSERT INTO project_images (project_id, url, alt, is_featured)
-        VALUES ${imageValues}
-        RETURNING *
-      `
-      const imageResult = await client.query(imageQuery, imageParams)
-      project.images = imageResult.rows
-    } else {
-      project.images = []
+      for (const img of images) {
+        await client.query(
+          `INSERT INTO project_images (project_id, url, alt, is_featured) VALUES ($1, $2, $3, $4)`,
+          [project.id, img.url, img.alt || title, img.isFeatured || false]
+        )
+      }
     }
-
-    return project
+    // Fetch with images
+    const withImages = await client.query(
+      `SELECT p.*, COALESCE(json_agg(pi.*) FILTER (WHERE pi.id IS NOT NULL), '[]') AS images FROM projects p LEFT JOIN project_images pi ON p.id = pi.project_id WHERE p.id = $1 GROUP BY p.id`,
+      [project.id]
+    )
+    return withImages.rows[0]
   })
 
   res.status(201).json(result)
@@ -173,21 +182,32 @@ export const createProject = catchAsync(async (req: Request, res: Response) => {
 // Update project
 export const updateProject = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params
-
   // Validate input
   const { error } = validateProject(req.body)
   if (error) {
     throw new AppError(error.details[0].message, 400)
   }
-
-  const { title, description, category, type, images } = req.body
-
+  const { title, description, category, type } = req.body
+  // Handle uploaded images
+  let images: any[] = []
+  if (req.files && Array.isArray(req.files)) {
+    images = (req.files as Express.Multer.File[]).map((file) => ({
+      url: `/uploads/${path.basename(file.path)}`,
+      alt: title,
+      isFeatured: false,
+    }))
+  } else if (req.body.images) {
+    try {
+      images = JSON.parse(req.body.images)
+    } catch {
+      images = req.body.images
+    }
+  }
   // Check if project exists
   const existingProject = await query("SELECT id FROM projects WHERE id = $1", [id])
   if (existingProject.rows.length === 0) {
     throw new AppError("Project not found", 404)
   }
-
   const result = await transaction(async (client) => {
     // Update project
     const projectQuery = `
@@ -198,35 +218,24 @@ export const updateProject = catchAsync(async (req: Request, res: Response) => {
     `
     const projectResult = await client.query(projectQuery, [title, description, category, type, id])
     const project = projectResult.rows[0]
-
     // Delete existing images
     await client.query("DELETE FROM project_images WHERE project_id = $1", [id])
-
     // Insert new images
     if (images && images.length > 0) {
-      const imageValues = images
-        .map((img: any, index: number) => `($1, $${index * 3 + 2}, $${index * 3 + 3}, $${index * 3 + 4})`)
-        .join(", ")
-
-      const imageParams = [id]
-      images.forEach((img: any) => {
-        imageParams.push(img.url, img.alt || title, img.isFeatured || false)
-      })
-
-      const imageQuery = `
-        INSERT INTO project_images (project_id, url, alt, is_featured)
-        VALUES ${imageValues}
-        RETURNING *
-      `
-      const imageResult = await client.query(imageQuery, imageParams)
-      project.images = imageResult.rows
-    } else {
-      project.images = []
+      for (const img of images) {
+        await client.query(
+          `INSERT INTO project_images (project_id, url, alt, is_featured) VALUES ($1, $2, $3, $4)`,
+          [id, img.url, img.alt || title, img.isFeatured || false]
+        )
+      }
     }
-
-    return project
+    // Fetch with images
+    const withImages = await client.query(
+      `SELECT p.*, COALESCE(json_agg(pi.*) FILTER (WHERE pi.id IS NOT NULL), '[]') AS images FROM projects p LEFT JOIN project_images pi ON p.id = pi.project_id WHERE p.id = $1 GROUP BY p.id`,
+      [id]
+    )
+    return withImages.rows[0]
   })
-
   res.json(result)
 })
 

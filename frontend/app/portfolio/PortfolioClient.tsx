@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight, Search, Loader2 } from "lucide-react"
 import { motion } from "framer-motion"
+import { getImageUrl } from "@/lib/getImageUrl"
 
 interface ProjectImage {
   id: string
@@ -124,12 +125,10 @@ export default function PortfolioClient({ projects }: { projects: Project[] }) {
                   <Card className="overflow-hidden h-full transition-all duration-300 hover:shadow-lg">
                     <div className="relative h-64 w-full overflow-hidden">
                       <Image
-                        src={mainImage?.url || "/placeholder.svg"}
+                        src={getImageUrl(mainImage?.url) || "/placeholder.svg"}
                         alt={mainImage?.alt || project.title}
                         fill
-                        className={`object-cover transition-transform duration-500 ${
-                          hoveredId === project.id ? "scale-110" : "scale-100"
-                        }`}
+                        className="object-cover"
                       />
                     </div>
                     <CardContent className="p-6">

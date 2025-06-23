@@ -38,7 +38,7 @@ export const register = catchAsync(async (req: Request, res: Response) => {
   const accessToken = jwt.sign(
     { id: user.id, email: user.email, role: user.role },
     process.env.JWT_SECRET || "default_secret",
-    { expiresIn: "15m" },
+    { expiresIn: "2d" },
   )
 
   const refreshToken = jwt.sign({ id: user.id }, process.env.REFRESH_TOKEN_SECRET || "refresh_secret", {
@@ -83,7 +83,7 @@ export const login = catchAsync(async (req: Request, res: Response) => {
   const accessToken = jwt.sign(
     { id: user.id, email: user.email, role: user.role },
     process.env.JWT_SECRET || "default_secret",
-    { expiresIn: "15m" },
+    { expiresIn: "2d" },
   )
 
   const refreshToken = jwt.sign({ id: user.id }, process.env.REFRESH_TOKEN_SECRET || "refresh_secret", {

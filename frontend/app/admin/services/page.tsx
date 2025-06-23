@@ -21,6 +21,7 @@ import { BASE_URL } from "@/lib/baseUrl"
 import { useToast } from "@/components/ui/use-toast"
 import { Badge } from "@/components/ui/badge"
 import { authFetch } from "@/lib/authFetch"
+import { getImageUrl } from "@/lib/getImageUrl"
 
 
 interface Service {
@@ -169,7 +170,7 @@ export default function AdminServices() {
                   {service.image_url && (
                     <div className="relative h-40 w-full">
                       <Image
-                        src={service.image_url}
+                        src={getImageUrl(service.image_url)}
                         alt={service.title}
                         fill
                         className="object-cover rounded-t-lg"

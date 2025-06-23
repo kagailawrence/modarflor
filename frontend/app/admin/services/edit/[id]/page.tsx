@@ -40,12 +40,26 @@ export default function EditServicePage() {
     features: [""],
   })
   const [formError, setFormError] = useState<string | null>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string>("")
 
   useEffect(() => {
     if (serviceId) {
       fetchServiceDetails()
     }
   }, [serviceId])
+
+  // Set image preview when service loads
+  useEffect(() => {
+    if (formData.image) {
+      // If image is a relative upload path, prepend BASE_URL
+      if (formData.image.startsWith("/uploads/")) {
+        setImagePreview(`${BASE_URL}${formData.image}`)
+      } else {
+        setImagePreview(formData.image)
+      }
+    }
+  }, [formData.image])
 
   const fetchServiceDetails = async () => {
     setPageLoading(true)
@@ -65,7 +79,9 @@ export default function EditServicePage() {
       setFormData({
         ...service,
         order: service.order !== undefined ? String(service.order) : "",
-        features: service.features && service.features.length > 0 ? service.features : [""],
+        features: service.features && service.features.length > 0
+          ? service.features.map((f: any) => typeof f === "string" ? f : f.description)
+          : [""],
       })
     } catch (err) {
       console.error("Error fetching service details:", err)
@@ -79,8 +95,16 @@ export default function EditServicePage() {
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    const { name, value, type } = e.target
+    if (type === "file") {
+      const file = (e.target as HTMLInputElement).files?.[0] || null
+      setImageFile(file)
+      if (file) {
+        setImagePreview(URL.createObjectURL(file))
+      }
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }))
+    }
     setFormError(null)
   }
 
@@ -133,14 +157,17 @@ export default function EditServicePage() {
         setLoading(false)
         return
       }
-
+      const fd = new FormData()
+      fd.append("title", formData.title)
+      fd.append("description", formData.description)
+      if (imageFile) fd.append("image", imageFile)
+      fd.append("alt", formData.alt || "")
+      if (orderValue !== undefined) fd.append("order", String(orderValue))
+      ;(formData.features || []).filter((f: string) => f.trim() !== "").forEach((f: string) => fd.append("features", f))
       const response = await fetch(`${BASE_URL}/api/services/${serviceId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
       })
 
       if (!response.ok) {
@@ -216,17 +243,19 @@ export default function EditServicePage() {
               <Label htmlFor="description">Description</Label>
               <Textarea id="description" name="description" value={formData.description} onChange={handleInputChange} placeholder="Describe the service" required rows={3} />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="image">Image URL</Label>
-                    <Input id="image" name="image" value={formData.image || ""} onChange={handleInputChange} placeholder="https://example.com/image.jpg" />
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="alt">Image Alt Text</Label>
-                    <Input id="alt" name="alt" value={formData.alt || ""} onChange={handleInputChange} placeholder="Descriptive alt text for image" />
-                </div>
+            <div className="space-y-2">
+                <Label htmlFor="image">Image</Label>
+                {imagePreview && (
+                  <img src={imagePreview && imagePreview.startsWith('/uploads/') ? `${BASE_URL}${imagePreview}` : imagePreview} alt="Current or New Service" className="h-24 w-auto rounded border mb-2" />
+                )}
+                <Input id="image" name="image" type="file" accept="image/*" onChange={handleInputChange} />
+                <small className="text-muted-foreground">Upload a new image to replace the current one.</small>
             </div>
              <div className="space-y-2">
+                <Label htmlFor="alt">Image Alt Text</Label>
+                <Input id="alt" name="alt" value={formData.alt || ""} onChange={handleInputChange} placeholder="Descriptive alt text for image" />
+            </div>
+            <div className="space-y-2">
                 <Label htmlFor="order">Display Order (Optional)</Label>
                 <Input id="order" name="order" type="number" value={formData.order} onChange={handleInputChange} placeholder="e.g., 1, 2, 3..." />
             </div>
@@ -270,3 +299,4 @@ export default function EditServicePage() {
     </div>
   )
 }
+

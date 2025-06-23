@@ -23,6 +23,7 @@ import {
 import { BASE_URL } from "@/lib/baseUrl" // Import BASE_URL
 import { useToast } from "@/components/ui/use-toast" // For user feedback
 import { authFetch } from "@/lib/authFetch"
+import { getImageUrl } from "@/lib/getImageUrl"
 
 // Define an interface for the project structure
 interface ProjectImage {
@@ -48,12 +49,15 @@ export default function AdminProjects() {
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("all")
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [paginationLoading, setPaginationLoading] = useState(false)
   const { toast } = useToast()
   // Add any other relevant fields from your API
 
   useEffect(() => {
     fetchProjects()
-  }, [])
+  }, [page])
 
   const fetchProjects = async () => {
     setLoading(true)
@@ -65,21 +69,21 @@ export default function AdminProjects() {
         setLoading(false)
         return
       }
-
-      const response = await authFetch(`${BASE_URL}/api/projects`, {
+      const response = await authFetch(`${BASE_URL}/api/projects?page=${page}&limit=9`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       })
-
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.message || `Failed to fetch projects: ${response.statusText}`)
       }
-      // Support both array and { data: array } shape
       const result = await response.json()
-      const data = Array.isArray(result) ? result : (result && Array.isArray(result.data) ? result.data : [])
+      const data = Array.isArray(result.data)
+        ? result.data.map((p: any) => ({ ...p, id: String(p.id) }))
+        : []
       setProjects(data)
+      setTotalPages(result.pagination?.totalPages || 1)
     } catch (err) {
       console.error("Error fetching projects:", err)
       setError(err instanceof Error ? err.message : "An unknown error occurred while fetching projects.")
@@ -208,7 +212,7 @@ export default function AdminProjects() {
           <Card key={project.id} className="overflow-hidden">
             <div className="relative h-48 w-full">
               <Image
-                src={project.images[0]?.url || "/placeholder.svg"}
+                src={getImageUrl(project.images[0]?.url) || "/placeholder.svg"}
                 alt={project.images[0]?.alt || project.title}
                 fill
                 className="object-cover"
@@ -269,6 +273,18 @@ export default function AdminProjects() {
           </Card>
         ))}
       </div>
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-8 gap-2">
+          <Button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1 || paginationLoading}>
+            Previous
+          </Button>
+          <span className="px-4 py-2">Page {page} of {totalPages}</span>
+          <Button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages || paginationLoading}>
+            Next
+          </Button>
+        </div>
+      )}
 
       {projects.length > 0 && filteredProjects.length === 0 && (
         <div className="text-center py-12">

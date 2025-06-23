@@ -55,12 +55,13 @@ export default function EditTestimonialPage() {
         const errorData = await response.json()
         throw new Error(errorData.message || "Failed to fetch testimonial details")
       }
-      const testimonial: TestimonialData = await response.json()
+      const testimonial: any = await response.json()
       setFormData({
-        ...testimonial,
-        rating: String(testimonial.rating), // Convert rating to string for Select
-        role: testimonial.role || "",       // Ensure role is not undefined
-        image: testimonial.image || "",     // Ensure image is not undefined
+        name: testimonial.name || "",
+        role: testimonial.role || "",
+        content: testimonial.content || "",
+        rating: String(testimonial.rating || ""),
+        image: testimonial.imageUrl || testimonial.image || testimonial.image_url || ""
       })
     } catch (err) {
       console.error("Error fetching testimonial details:", err)
@@ -97,9 +98,10 @@ export default function EditTestimonialPage() {
     const payload = {
       ...formData,
       rating: Number(formData.rating),
+      imageUrl: formData.image, // Map image to imageUrl for backend
     }
-    // Remove id from payload if it exists, as it's usually part of the URL path for PUT
-    const { id, ...updatePayload } = payload;
+    // Remove id and image from payload, as backend expects imageUrl only
+    const { id, image, ...updatePayload } = payload;
 
 
     try {

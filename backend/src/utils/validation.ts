@@ -30,6 +30,21 @@ export const validateUser = (data: any) => {
 
 // Project validation schema
 export const validateProject = (data: any) => {
+  let images = data.images
+  // If imagesMeta is present, use it (for multipart/form-data)
+  if (typeof data.imagesMeta === "string") {
+    try {
+      images = JSON.parse(data.imagesMeta)
+    } catch {
+      // If parsing fails, leave as is (Joi will catch the error)
+    }
+  } else if (typeof images === "string") {
+    try {
+      images = JSON.parse(images)
+    } catch {
+      // If parsing fails, leave as is (Joi will catch the error)
+    }
+  }
   const schema = Joi.object({
     title: Joi.string().required().min(3).max(100),
     description: Joi.string().required(),
@@ -38,15 +53,16 @@ export const validateProject = (data: any) => {
     images: Joi.array()
       .items(
         Joi.object({
-          url: Joi.string().required().uri(),
-          alt: Joi.string(),
-          isFeatured: Joi.boolean(),
+          url: Joi.string().required(),
+          alt: Joi.string().allow('').optional(),
+          isFeatured: Joi.boolean().optional(),
         }),
       )
       .min(1)
       .required(),
   })
-  return schema.validate(data)
+  // Validate with possibly parsed images
+  return schema.validate({ ...data, images })
 }
 
 // Testimonial validation schema
@@ -66,9 +82,10 @@ export const validateService = (data: any) => {
   const schema = Joi.object({
     title: Joi.string().required().min(3).max(100),
     description: Joi.string().required(),
-    imageUrl: Joi.string().uri().required(),
+    imageUrl: Joi.string().allow('').optional(), // Allow empty or missing, will be set from file
     order: Joi.number(),
     features: Joi.array().items(Joi.string()).min(1).required(),
+    alt: Joi.string().allow('').optional(), // Allow alt text for image
   })
   return schema.validate(data)
 }

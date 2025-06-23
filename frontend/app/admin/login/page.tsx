@@ -58,7 +58,6 @@ alert(JSON.stringify(response.status))
           localStorage.setItem("userName", data.user.name);
           localStorage.setItem("userEmail", data.user.email);
           localStorage.setItem("userRole", data.user.role);
-
           // Only redirect to admin dashboard if user is Admin
           if (data.user.role === "Admin") {
             router.push("/admin");
@@ -94,8 +93,7 @@ alert(JSON.stringify(response.status))
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <Link href="/" className="flex items-center justify-center space-x-2 mb-6">
-            <img src="/placeholder-logo.png" alt="ModarFlor Logo" className="h-10 w-10 rounded-full border border-[--border]" />
-            <span className="text-2xl font-bold text-primary">ModarFlor</span>
+            <img src="/logo.png" alt="ModarFlor Logo" />
           </Link>
           <h2 className="text-3xl font-bold">Admin Login</h2>
           <p className="mt-2 text-muted-foreground">Sign in to access the admin dashboard</p>

@@ -39,14 +39,14 @@ export const getServiceById = catchAsync(async (req: Request, res: Response) => 
 
 // Create new service
 export const createService = catchAsync(async (req: Request, res: Response) => {
+  // Set imageUrl from file upload if present
+  if (req.file) {
+    req.body.imageUrl = `/uploads/${path.basename(req.file.path)}`
+  }
   const { error } = validateService(req.body)
   if (error) throw new AppError(error.details[0].message, 400)
   const { title, description, order, features } = req.body
-  // Handle uploaded image
-  let imageUrl = req.body.imageUrl
-  if (req.file) {
-    imageUrl = `/uploads/${path.basename(req.file.path)}`
-  }
+  const imageUrl = req.body.imageUrl
   const result = await query(
     `INSERT INTO services (title, description, image_url, order_index)
      VALUES ($1, $2, $3, $4)

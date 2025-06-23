@@ -65,12 +65,13 @@ export default function AdminLayout({
   };
 
   // Only render layout (sidebar, header, etc) if not on login page
-  if (pathname === "/admin/login") {
+  const isLoginPage = pathname === "/admin/login" || pathname === "/admin/login/";
+  if (isLoginPage) {
     return <>{children}</>; // Render login page without layout
   }
 
   // If still checking or no token/admin role, show loading or redirect handled by useEffect
-  if (!user && pathname !== "/admin/login") {
+  if (!user && !isLoginPage) {
      // This state means useEffect is either still running, or has decided to redirect.
      // Showing a generic loading can prevent flicker before redirect.
     return <div className="flex h-screen items-center justify-center">Loading admin panel...</div>;
@@ -87,8 +88,7 @@ export default function AdminLayout({
       >
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700">
           <Link href="/admin" className="flex items-center space-x-2">
-            <img src="/placeholder-logo.png" alt="ModarFlor Logo" className="h-8 w-8 rounded-full border border-[--border]" />
-            <span className="text-xl font-bold text-primary">ModarFlor</span>
+            <img src="/logo.png" alt="ModarFlor Logo" className="" />
             <span className="text-xl font-light">Admin</span>
           </Link>
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(false)}>

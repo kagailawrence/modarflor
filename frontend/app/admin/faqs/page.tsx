@@ -6,6 +6,8 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authFetch } from '@/lib/authFetch';
+import { toast } from 'sonner';
+import { BASE_URL } from '@/lib/baseUrl';
 
 interface FAQ {
   id: number;
@@ -28,12 +30,13 @@ export default function AdminFAQsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await authFetch('/api/faqs');
+      const res = await authFetch(`${BASE_URL}/api/faqs`);
       if (!res.ok) throw new Error('Failed to fetch FAQs');
       const data = await res.json();
       setFaqs(data);
     } catch (e: any) {
       setError(e.message);
+      toast.error(e.message || 'Failed to fetch FAQs');
     } finally {
       setLoading(false);
     }
@@ -52,11 +55,13 @@ export default function AdminFAQsPage() {
     if (!confirm('Delete this FAQ?')) return;
     setSubmitting(true);
     try {
-      const res = await authFetch(`/api/faqs/${id}`, { method: 'DELETE' });
+      const res = await authFetch(`${BASE_URL}/api/faqs/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Delete failed');
       await fetchFaqs();
+      toast.success('FAQ deleted successfully');
     } catch (e: any) {
       setError(e.message);
+      toast.error(e.message || 'Delete failed');
     } finally {
       setSubmitting(false);
     }
@@ -64,11 +69,15 @@ export default function AdminFAQsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.question.trim() || !form.answer.trim()) {
+      toast.error('Both question and answer are required.');
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
       const method = editing ? 'PUT' : 'POST';
-      const url = editing ? `/api/faqs/${editing.id}` : '/api/faqs';
+      const url = editing ? `${BASE_URL}/api/faqs/${editing.id}` : `${BASE_URL}/api/faqs`;
       const res = await authFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -78,8 +87,10 @@ export default function AdminFAQsPage() {
       setEditing(null);
       setForm(emptyFAQ);
       await fetchFaqs();
+      toast.success(editing ? 'FAQ updated successfully' : 'FAQ added successfully');
     } catch (e: any) {
       setError(e.message);
+      toast.error(e.message || 'Save failed');
     } finally {
       setSubmitting(false);
     }

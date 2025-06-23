@@ -11,6 +11,7 @@ import serviceRoutes from "./routes/serviceRoutes"
 import userRoutes from "./routes/userRoutes"
 import authRoutes from "./routes/authRoutes"
 import logRoutes from "./routes/logRoutes"; // Import log routes
+import faqRoutes from "./routes/faqRoutes"
 import { authenticateJWT } from "./middleware/auth"
 import winston from "winston"
 import fs from "fs"
@@ -61,7 +62,8 @@ app.use(
     credentials: true,
   }),
 )
-app.use(helmet())
+
+
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
@@ -80,6 +82,9 @@ app.use((req, res, next) => {
   next()
 })
 
+// Serve uploaded images statically (use __dirname for absolute path)
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")))
+
 // Routes
 app.use("/api/auth", authRoutes)
 app.use("/api/projects", projectRoutes)
@@ -87,6 +92,7 @@ app.use("/api/testimonials", testimonialRoutes)
 app.use("/api/services", serviceRoutes)
 app.use("/api/users", authenticateJWT, userRoutes) // Protected user routes
 app.use("/api/logs", logRoutes); // Protected log routes, auth handled within logRoutes
+app.use("/api/faqs", faqRoutes)
 
 // Health check endpoint
 app.get("/health", (req, res) => {

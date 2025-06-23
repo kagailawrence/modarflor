@@ -125,6 +125,16 @@ export const getProjectById = catchAsync(async (req: Request, res: Response) => 
 
 // Create new project
 export const createProject = catchAsync(async (req: Request, res: Response) => {
+  // Always set req.body.images from imagesMeta if present
+  if (req.body.imagesMeta) {
+    try {
+      req.body.images = JSON.parse(req.body.imagesMeta)
+    } catch {
+      req.body.images = []
+    }
+    delete req.body.imagesMeta
+  }
+
   // Validate input (title, description, etc.)
   const { error } = validateProject(req.body)
   if (error) {
@@ -181,6 +191,21 @@ export const createProject = catchAsync(async (req: Request, res: Response) => {
 
 // Update project
 export const updateProject = catchAsync(async (req: Request, res: Response) => {
+  // Always set req.body.images from imagesMeta if present
+  if (req.body.imagesMeta) {
+    try {
+      req.body.images = JSON.parse(req.body.imagesMeta)
+    } catch {
+      req.body.images = []
+    }
+    delete req.body.imagesMeta
+  }
+
+  // Remove imagesMeta from req.body before validation
+  if (req.body.imagesMeta) {
+    req.body.imagesMeta = undefined
+    delete req.body.imagesMeta
+  }
   const { id } = req.params
   // Validate input
   const { error } = validateProject(req.body)

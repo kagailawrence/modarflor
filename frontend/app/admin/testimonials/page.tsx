@@ -67,9 +67,17 @@ export default function AdminTestimonials() {
         const errorData = await response.json()
         throw new Error(errorData.message || "Failed to fetch testimonials")
       }
-      const data: Testimonial[] = await response.json()
-      // Ensure data is an array; backend might return { testimonials: [] }
-      setTestimonials(Array.isArray(data) ? data : (data as any).testimonials || [])
+      const data = await response.json()
+      // Support paginated (data.data) or flat array or { testimonials: [] }
+      let testimonialsArr: Testimonial[] = []
+      if (Array.isArray(data)) {
+        testimonialsArr = data
+      } else if (Array.isArray(data.data)) {
+        testimonialsArr = data.data
+      } else if (Array.isArray(data.testimonials)) {
+        testimonialsArr = data.testimonials
+      }
+      setTestimonials(testimonialsArr)
     } catch (err) {
       console.error("Error fetching testimonials:", err)
       setError(err instanceof Error ? err.message : "An unknown error occurred.")
@@ -179,11 +187,11 @@ export default function AdminTestimonials() {
                   <CardContent className="p-4 flex flex-col flex-grow gap-3">
                     <div className="flex items-start gap-3">
                       <Avatar className="h-12 w-12 border">
-                        <AvatarImage src={t.image || undefined} alt={t.name} />
-                        <AvatarFallback>
-                          {t.name.split(" ").map(n => n[0]).join("").toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
+                      <AvatarImage src={t.image || undefined} alt={t.name} />
+                      <AvatarFallback>
+                        {t.name.split(" ").map(n => n[0]).join("").toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
                       <div className="flex-1">
                         <h2 className="font-semibold text-lg">{t.name}</h2>
                         {t.role && <p className="text-xs text-muted-foreground">{t.role}</p>}
@@ -195,7 +203,7 @@ export default function AdminTestimonials() {
                     <p className="text-sm text-muted-foreground italic line-clamp-4 flex-grow">"{t.content}"</p>
 
                     <div className="mt-auto flex gap-2 pt-3 border-t border-muted/50">
-                       <Button size="sm" variant="outline" asChild>
+                          <Button size="sm" variant="outline" asChild>
                         <Link href={`/admin/testimonials/edit/${t.id}`}>
                           <Edit className="w-4 h-4 mr-1.5" /> Edit
                         </Link>

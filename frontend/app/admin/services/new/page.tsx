@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { PlusCircle, XCircle, Loader2, ArrowLeft } from "lucide-react"
 import { BASE_URL } from "@/lib/baseUrl"
 import { useToast } from "@/components/ui/use-toast"
+import { authFetch } from "@/lib/authFetch"
 
 interface ServiceFormData {
   title: string
@@ -92,7 +93,7 @@ export default function NewServicePage() {
       fd.append("alt", formData.alt)
       if (orderValue !== undefined) fd.append("order", String(orderValue))
       features.forEach(f => fd.append("features", f))
-      const response = await fetch(`${BASE_URL}/api/services`, {
+      const response = await authFetch(`${BASE_URL}/api/services`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: fd,

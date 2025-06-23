@@ -16,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Upload, X, Plus, Loader2, ArrowLeft } from "lucide-react"
 import { BASE_URL } from "@/lib/baseUrl"
 import { useToast } from "@/components/ui/use-toast"
+import { getImageUrl } from "@/lib/getImageUrl"
 
 // Interfaces (similar to new/page.tsx but might need adjustments for existing images)
 interface ProjectImageInput {
@@ -93,8 +94,8 @@ export default function EditProjectPage() {
         type: project.type,
       })
       // Map fetched images to ProjectImageInput format
-      setImages(project.images.map(img => ({
-        id: img.id || Math.random().toString(36).substr(2, 9), // Use backend image ID if available
+      setImages((project.images as any[]).map((img) => ({
+        id: img.id ? String(img.id) : Math.random().toString(36).substr(2, 9), // Use backend image ID if available
         url: img.url,
         alt: img.alt,
         isFeatured: img.isFeatured || false,
@@ -214,7 +215,7 @@ export default function EditProjectPage() {
       toast({ title: "Missing Images", description: "At least one image is required.", variant: "destructive"})
       return
     }
-     if (!formData.category || !formData.type) {
+    if (!formData.category || !formData.type) {
       setFormError("Please select a category and project type.")
       setLoading(false)
       toast({ title: "Missing Fields", description: "Category and Type are required.", variant: "destructive"})
@@ -230,29 +231,24 @@ export default function EditProjectPage() {
         return
       }
 
-      const updatedImagePayloads: ProjectImagePayload[] = await Promise.all(
-        images.map(async (img) => {
-          let imageUrl = img.url
-          // If it's a new image (has a file object), upload it. Otherwise, use existing URL.
-          if (img.file && !img.isExisting) {
-            imageUrl = await uploadImageAndGetURL(img.file)
-          }
-          return { url: imageUrl, alt: img.alt, isFeatured: img.isFeatured }
-        }),
-      )
-
-      const projectUpdateData: ProjectData = {
-        ...formData,
-        images: updatedImagePayloads,
-      }
+      // Use FormData for file/image upload
+      const fd = new FormData()
+      fd.append("title", formData.title)
+      fd.append("description", formData.description)
+      fd.append("category", formData.category)
+      fd.append("type", formData.type)
+      // Append new image files
+      images.forEach((img) => {
+        if (img.file && !img.isExisting) fd.append("images", img.file)
+      })
+      // Send alt/isFeatured as JSON for each image (order matches files)
+      const meta = images.map(img => ({ alt: img.alt, isFeatured: img.isFeatured, url: img.url }))
+      fd.append("imagesMeta", JSON.stringify(meta))
 
       const response = await fetch(`${BASE_URL}/api/projects/${projectId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(projectUpdateData),
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
       })
 
       if (!response.ok) {
@@ -413,7 +409,7 @@ export default function EditProjectPage() {
                 {images.map((image) => (
                   <div key={image.id} className="relative group">
                     <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
-                      <Image src={image.url || "/placeholder.svg"} alt={image.alt} fill className="object-cover" />
+                      <Image src={getImageUrl(image.url) || "/placeholder.svg"} alt={image.alt} fill className="object-cover" />
                       <Button
                         type="button"
                         size="icon"

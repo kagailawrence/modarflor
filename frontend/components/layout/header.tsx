@@ -29,11 +29,10 @@ const Header = () => {
       href: "#",
       dropdown: [
         { name: "Blog", href: "/blog" },
-        { name: "Gallery", href: "/gallery" },
         { name: "Calculator", href: "/calculator" },
         { name: "FAQ", href: "/faqs" },
         { name: "Reviews", href: "/reviews" },
-        { name: "Warranty", href: "/warranty" },
+        // { name: "Warranty", href: "/warranty" },
       ],
     },
     { name: "Contact", href: "/contact" },
@@ -45,10 +44,9 @@ const Header = () => {
         isScrolled ? "bg-background/95 backdrop-blur-sm shadow-sm" : "bg-transparent"
       }`}
     >
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+      <div className="container mx-auto px-4 py-2 flex items-center justify-between">
         <Link href="/" className="flex items-center space-x-2">
-        
-          <span className="text-2xl font-bold text-primary">MODA<span className="text-2xl font-light">FLOR</span></span>
+          <img src="/logo.png" alt="ModarFlor Logo" className="h-20 w-auto max-w-[250px] object-contain" />
         </Link>
 
         {/* Desktop Navigation */}

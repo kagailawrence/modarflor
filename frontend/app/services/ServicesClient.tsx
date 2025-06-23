@@ -4,6 +4,8 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ArrowRight, CheckCircle } from "lucide-react"
+import { BASE_URL } from "@/lib/baseUrl"
+import { getImageUrl } from "@/lib/getImageUrl"
 
 interface ServiceFeature {
   id: string
@@ -37,32 +39,35 @@ export default function ServicesClient({ services }: { services: Service[] }) {
         </div>
         {/* Services grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-          {services.map((service) => (
-            <Card key={service.id} className="overflow-hidden h-full service-card">
-              <div className="relative h-48 w-full overflow-hidden">
-                <Image src={service.image_url || "/placeholder.svg"} alt={service.title} fill className="object-cover" />
-              </div>
-              <CardContent className="p-6">
-                <h3 className="text-xl font-semibold mb-3">{service.title}</h3>
-                <p className="text-muted-foreground mb-4">{service.description}</p>
-                <ul className="mb-4 space-y-2">
-                  {service.features.slice(0, 3).map((feature) => (
-                    <li key={feature.id} className="flex items-center text-sm">
-                      <CheckCircle className="h-4 w-4 mr-2 text-primary" />
-                      {feature.description}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href={`/services/${service.id}`}
-                  className="text-primary font-medium inline-flex items-center hover:underline"
-                >
-                  Learn More
-                  <ArrowRight className="ml-1 h-4 w-4" />
-                </Link>
-              </CardContent>
-            </Card>
-          ))}
+          {services.map((service) => {
+            const imageUrl = getImageUrl(service.image_url);
+            return (
+              <Card key={service.id} className="overflow-hidden h-full service-card">
+                <div className="relative h-48 w-full overflow-hidden">
+                  <Image src={imageUrl} alt={service.title} fill className="object-cover" />
+                </div>
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-semibold mb-3">{service.title}</h3>
+                  <p className="text-muted-foreground mb-4">{service.description}</p>
+                  <ul className="mb-4 space-y-2">
+                    {service.features.slice(0, 3).map((feature: any, idx: number) => (
+                      <li key={idx} className="flex items-center text-sm">
+                        <CheckCircle className="h-4 w-4 mr-2 text-primary" />
+                        {typeof feature === 'string' ? feature : feature.description}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href={`/services/${service.id}`}
+                    className="text-primary font-medium inline-flex items-center hover:underline"
+                  >
+                    Learn More
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
         {/* Process section */}
         <div className="bg-muted/30 rounded-lg p-8 md:p-12 mb-16">

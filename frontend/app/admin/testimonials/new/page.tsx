@@ -59,7 +59,10 @@ export default function NewTestimonialPage() {
     const payload = {
       ...formData,
       rating: Number(formData.rating), // Convert rating to number
+      imageUrl: formData.image, // Map image to imageUrl for backend
     }
+    // Remove image from payload, as backend expects imageUrl only
+    const { image, ...createPayload } = payload
 
     try {
       const token = localStorage.getItem("accessToken")
@@ -77,7 +80,7 @@ export default function NewTestimonialPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(createPayload),
       })
 
       if (!response.ok) {

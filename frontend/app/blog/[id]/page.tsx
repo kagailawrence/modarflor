@@ -295,3 +295,17 @@ export default function BlogPostPage() {
     </div>
   )
 }
+
+// For static export, provide all blog IDs to generate
+export async function generateStaticParams() {
+  // Use the same mock data as in the file
+  const posts = [
+    { id: 1 },
+    { id: 2 },
+    { id: 3 },
+    { id: 4 },
+    { id: 5 },
+    { id: 6 },
+  ];
+  return posts.map((post) => ({ id: String(post.id) }));
+}

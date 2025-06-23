@@ -167,8 +167,8 @@ export default function NewProject() {
         if (img.file) fd.append("images", img.file)
       })
       // Send alt/isFeatured as JSON for each image (order matches files)
-      const meta = images.map(img => ({ alt: img.alt, isFeatured: img.isFeatured }))
-      fd.append("images", JSON.stringify(meta))
+      const meta = images.map(img => ({ alt: img.alt, isFeatured: img.isFeatured, url: img.url }))
+      fd.append("imagesMeta", JSON.stringify(meta))
       const response = await fetch(`${BASE_URL}/api/projects`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },

@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "generate-sitemap": "ts-node scripts/generate-sitemap.ts",
     "lint": "next lint"
   },
   "dependencies": {

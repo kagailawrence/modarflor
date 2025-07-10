@@ -1,6 +1,6 @@
 "use client";
 
-// Admin FAQ management page for ModarFlor
+// Admin FAQ management page for ModaFlor
 // Lists, creates, edits, and deletes FAQs
 
 import React, { useEffect, useState } from 'react';
@@ -31,6 +31,7 @@ export default function AdminFAQsPage() {
     setError(null);
     try {
       const res = await authFetch(`${BASE_URL}/api/faqs`);
+      console.log(res)
       if (!res.ok) throw new Error('Failed to fetch FAQs');
       const data = await res.json();
       setFaqs(data);
@@ -96,6 +97,20 @@ export default function AdminFAQsPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {Array.from({ length: 6 }).map((_, idx) => (
+          <div key={idx} className="p-4 bg-gray-100 rounded shadow animate-pulse">
+            <div className="h-4 w-1/2 bg-gray-300 rounded mb-2" />
+            <div className="h-3 w-3/4 bg-gray-200 rounded mb-1" />
+            <div className="h-3 w-2/3 bg-gray-200 rounded" />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-2xl mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">FAQ Management</h1>
@@ -128,24 +143,20 @@ export default function AdminFAQsPage() {
         </div>
       </form>
       <h2 className="font-semibold mb-2">All FAQs</h2>
-      {loading ? (
-        <div>Loading...</div>
-      ) : (
-        <ul className="space-y-4">
-          {faqs.map(faq => (
-            <li key={faq.id} className="bg-white p-4 rounded shadow flex flex-col md:flex-row md:items-center md:justify-between">
-              <div>
-                <div className="font-medium">Q: {faq.question}</div>
-                <div className="text-gray-700">A: {faq.answer}</div>
-              </div>
-              <div className="flex gap-2 mt-2 md:mt-0">
-                <button className="bg-yellow-500 text-white px-3 py-1 rounded" onClick={() => handleEdit(faq)} disabled={submitting}>Edit</button>
-                <button className="bg-red-600 text-white px-3 py-1 rounded" onClick={() => handleDelete(faq.id)} disabled={submitting}>Delete</button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+      <ul className="space-y-4">
+        {faqs.map(faq => (
+          <li key={faq.id} className="bg-white p-4 rounded shadow flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="font-medium">Q: {faq.question}</div>
+              <div className="text-gray-700">A: {faq.answer}</div>
+            </div>
+            <div className="flex gap-2 mt-2 md:mt-0">
+              <button className="bg-yellow-500 text-white px-3 py-1 rounded" onClick={() => handleEdit(faq)} disabled={submitting}>Edit</button>
+              <button className="bg-red-600 text-white px-3 py-1 rounded" onClick={() => handleDelete(faq.id)} disabled={submitting}>Delete</button>
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

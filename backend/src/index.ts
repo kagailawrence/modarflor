@@ -12,10 +12,14 @@ import userRoutes from "./routes/userRoutes"
 import authRoutes from "./routes/authRoutes"
 import logRoutes from "./routes/logRoutes"; // Import log routes
 import faqRoutes from "./routes/faqRoutes"
+import contactRoutes from "./routes/contactRoutes"
 import { authenticateJWT } from "./middleware/auth"
 import winston from "winston"
 import fs from "fs"
 import path from "path"
+import scheduleRoutes from "./routes/scheduleRoutes"
+import quoteRoutes from "./routes/quoteRoutes"
+import flooringTypeRoutes from "./routes/flooringTypeRoutes" // Import flooring type routes
 
 // Load environment variables
 dotenv.config()
@@ -93,6 +97,10 @@ app.use("/api/services", serviceRoutes)
 app.use("/api/users", authenticateJWT, userRoutes) // Protected user routes
 app.use("/api/logs", logRoutes); // Protected log routes, auth handled within logRoutes
 app.use("/api/faqs", faqRoutes)
+app.use("/api/contact", contactRoutes)
+app.use("/api/schedule", scheduleRoutes) // Register schedule routes
+app.use("/api/quote", quoteRoutes) // Register quote routes
+app.use("/api/flooring-types", flooringTypeRoutes) // Register flooring type routes
 
 // Health check endpoint
 app.get("/health", (req, res) => {

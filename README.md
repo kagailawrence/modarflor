@@ -1,4 +1,4 @@
-#  ModarFlor - Floor Decoration Company Web Application
+#  ModaFlor - Floor Decoration Company Web Application
 
 A complete full-stack web application for a floor decoration company built with Next.js 15, TypeScript, and PostgreSQL.
 
@@ -112,7 +112,7 @@ The application uses PostgreSQL with the following main tables:
 ## 🔐 Authentication
 
 ### Default Admin Credentials
-- Email: `admin@ ModarFlor.com`
+- Email: `admin@ ModaFlor.com`
 - Password: `admin123`
 
 ### API Endpoints
@@ -232,4 +232,4 @@ This project is licensed under the MIT License.
 
 ## 🆘 Support
 
-For support, email support@ ModarFlor.com or create an issue in the repository.
+For support, email support@ ModaFlor.com or create an issue in the repository.

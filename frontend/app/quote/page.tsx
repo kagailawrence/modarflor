@@ -14,6 +14,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Badge } from "@/components/ui/badge"
 import { Calculator, Home, Building, Clock, CheckCircle, Phone, Mail } from "lucide-react"
 import { motion } from "framer-motion"
+import { toast } from "sonner"
+import { BASE_URL } from "@/lib/baseUrl"
 
 const flooringTypes = [
   { id: "epoxy", name: "Epoxy Flooring", priceRange: "Ksh 390-1,040/sq ft", description: "Durable, seamless coating" },
@@ -97,9 +99,38 @@ export default function QuotePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission
-    console.log("Quote request submitted:", formData)
-    // Show success message or redirect
+    try {
+      const res = await fetch(BASE_URL + "/api/quote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+      if (!res.ok) throw new Error("Failed to submit quote. Please try again later.")
+      toast.success("Your quote request has been submitted! Check your email for confirmation.")
+      setStep(1)
+      setFormData({
+        projectType: "",
+        flooringType: "",
+        squareFootage: "",
+        rooms: "",
+        timeline: "",
+        additionalServices: [],
+        specialRequirements: "",
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        address: "",
+        city: "",
+        zipCode: "",
+        preferredContact: "",
+        projectDescription: "",
+        budget: "",
+        startDate: "",
+      })
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to submit quote.")
+    }
   }
 
   const nextStep = () => setStep((prev) => Math.min(prev + 1, 4))
@@ -161,279 +192,292 @@ export default function QuotePage() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit}>
-            {/* Step 1: Project Type & Flooring */}
-            {step === 1 && (
-              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Calculator className="h-5 w-5 mr-2" />
-                      Project Information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Project Type */}
-                    <div className="space-y-3">
-                      <Label>Project Type</Label>
-                      <RadioGroup
-                        value={formData.projectType}
-                        onValueChange={(value) => handleSelectChange("projectType", value)}
-                      >
+          {/* Stepper and content */}
+          {step < 4 ? (
+            <div>
+              {/* Step 1: Project Type & Flooring */}
+              {step === 1 && (
+                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Calculator className="h-5 w-5 mr-2" />
+                        Project Information
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* Project Type */}
+                      <div className="space-y-3">
+                        <Label>Project Type</Label>
+                        <RadioGroup
+                          value={formData.projectType}
+                          onValueChange={(value) => handleSelectChange("projectType", value)}
+                        >
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {projectTypes.map((type) => (
+                              <div key={type.id} className="flex items-center space-x-2">
+                                <RadioGroupItem value={type.id} id={type.id} />
+                                <Label htmlFor={type.id} className="flex items-center cursor-pointer">
+                                  <type.icon className="h-4 w-4 mr-2" />
+                                  {type.name}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </RadioGroup>
+                      </div>
+
+                      {/* Flooring Type */}
+                      <div className="space-y-3">
+                        <Label>Flooring Type</Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {projectTypes.map((type) => (
-                            <div key={type.id} className="flex items-center space-x-2">
-                              <RadioGroupItem value={type.id} id={type.id} />
-                              <Label htmlFor={type.id} className="flex items-center cursor-pointer">
-                                <type.icon className="h-4 w-4 mr-2" />
-                                {type.name}
-                              </Label>
-                            </div>
+                          {flooringTypes.map((type) => (
+                            <Card
+                              key={type.id}
+                              className={`cursor-pointer transition-all ${
+                                formData.flooringType === type.id ? "ring-2 ring-primary bg-primary/5" : "hover:shadow-md"
+                              }`}
+                              onClick={() => handleSelectChange("flooringType", type.id)}
+                            >
+                              <CardContent className="p-4">
+                                <div className="flex items-start justify-between mb-2">
+                                  <h3 className="font-medium">{type.name}</h3>
+                                  <Badge variant="outline">{type.priceRange}</Badge>
+                                </div>
+                                <p className="text-sm text-muted-foreground">{type.description}</p>
+                              </CardContent>
+                            </Card>
                           ))}
                         </div>
-                      </RadioGroup>
-                    </div>
+                      </div>
 
-                    {/* Flooring Type */}
-                    <div className="space-y-3">
-                      <Label>Flooring Type</Label>
+                      {/* Square Footage */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {flooringTypes.map((type) => (
-                          <Card
-                            key={type.id}
-                            className={`cursor-pointer transition-all ${
-                              formData.flooringType === type.id ? "ring-2 ring-primary bg-primary/5" : "hover:shadow-md"
-                            }`}
-                            onClick={() => handleSelectChange("flooringType", type.id)}
-                          >
-                            <CardContent className="p-4">
-                              <div className="flex items-start justify-between mb-2">
-                                <h3 className="font-medium">{type.name}</h3>
-                                <Badge variant="outline">{type.priceRange}</Badge>
-                              </div>
-                              <p className="text-sm text-muted-foreground">{type.description}</p>
-                            </CardContent>
-                          </Card>
+                        <div className="space-y-2">
+                          <Label htmlFor="squareFootage">Square Footage</Label>
+                          <Input
+                            id="squareFootage"
+                            name="squareFootage"
+                            type="number"
+                            value={formData.squareFootage}
+                            onChange={handleInputChange}
+                            placeholder="e.g., 500"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="rooms">Number of Rooms</Label>
+                          <Input
+                            id="rooms"
+                            name="rooms"
+                            type="number"
+                            value={formData.rooms}
+                            onChange={handleInputChange}
+                            placeholder="e.g., 3"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Timeline */}
+                      <div className="space-y-2">
+                        <Label htmlFor="timeline">Preferred Timeline</Label>
+                        <Select
+                          value={formData.timeline}
+                          onValueChange={(value) => handleSelectChange("timeline", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="When would you like to start?" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="asap">As soon as possible</SelectItem>
+                            <SelectItem value="1-2weeks">1-2 weeks</SelectItem>
+                            <SelectItem value="1month">Within 1 month</SelectItem>
+                            <SelectItem value="2-3months">2-3 months</SelectItem>
+                            <SelectItem value="flexible">Flexible</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Estimated Range */}
+                      {getEstimatedRange() && (
+                        <div className="bg-primary/10 p-4 rounded-lg">
+                          <h3 className="font-medium mb-2">Estimated Price Range</h3>
+                          <p className="text-2xl font-bold text-primary">{getEstimatedRange()}</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            *This is a rough estimate. Final quote may vary based on specific requirements.
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+
+              {/* Step 2: Additional Services */}
+              {step === 2 && (
+                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Additional Services</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="space-y-4">
+                        <Label>Select any additional services you need:</Label>
+                        {additionalServices.map((service) => (
+                          <div key={service.id} className="flex items-start space-x-3">
+                            <Checkbox
+                              id={service.id}
+                              checked={formData.additionalServices.includes(service.id)}
+                              onCheckedChange={() => handleServiceToggle(service.id)}
+                            />
+                            <div className="flex-1">
+                              <Label htmlFor={service.id} className="cursor-pointer font-medium">
+                                {service.name}
+                              </Label>
+                              <p className="text-sm text-muted-foreground">{service.description}</p>
+                            </div>
+                          </div>
                         ))}
                       </div>
-                    </div>
 
-                    {/* Square Footage */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="squareFootage">Square Footage</Label>
-                        <Input
-                          id="squareFootage"
-                          name="squareFootage"
-                          type="number"
-                          value={formData.squareFootage}
+                        <Label htmlFor="specialRequirements">Special Requirements or Notes</Label>
+                        <Textarea
+                          id="specialRequirements"
+                          name="specialRequirements"
+                          value={formData.specialRequirements}
                           onChange={handleInputChange}
-                          placeholder="e.g., 500"
+                          placeholder="Any special requirements, accessibility needs, or additional details..."
+                          rows={4}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="rooms">Number of Rooms</Label>
-                        <Input
-                          id="rooms"
-                          name="rooms"
-                          type="number"
-                          value={formData.rooms}
-                          onChange={handleInputChange}
-                          placeholder="e.g., 3"
-                        />
-                      </div>
-                    </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
 
-                    {/* Timeline */}
-                    <div className="space-y-2">
-                      <Label htmlFor="timeline">Preferred Timeline</Label>
-                      <Select
-                        value={formData.timeline}
-                        onValueChange={(value) => handleSelectChange("timeline", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="When would you like to start?" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="asap">As soon as possible</SelectItem>
-                          <SelectItem value="1-2weeks">1-2 weeks</SelectItem>
-                          <SelectItem value="1month">Within 1 month</SelectItem>
-                          <SelectItem value="2-3months">2-3 months</SelectItem>
-                          <SelectItem value="flexible">Flexible</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Estimated Range */}
-                    {getEstimatedRange() && (
-                      <div className="bg-primary/10 p-4 rounded-lg">
-                        <h3 className="font-medium mb-2">Estimated Price Range</h3>
-                        <p className="text-2xl font-bold text-primary">{getEstimatedRange()}</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          *This is a rough estimate. Final quote may vary based on specific requirements.
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
-
-            {/* Step 2: Additional Services */}
-            {step === 2 && (
-              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Additional Services</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                      <Label>Select any additional services you need:</Label>
-                      {additionalServices.map((service) => (
-                        <div key={service.id} className="flex items-start space-x-3">
-                          <Checkbox
-                            id={service.id}
-                            checked={formData.additionalServices.includes(service.id)}
-                            onCheckedChange={() => handleServiceToggle(service.id)}
+              {/* Step 3: Contact Information */}
+              {step === 3 && (
+                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Contact Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="firstName">First Name</Label>
+                          <Input
+                            id="firstName"
+                            name="firstName"
+                            value={formData.firstName}
+                            onChange={handleInputChange}
+                            required
                           />
-                          <div className="flex-1">
-                            <Label htmlFor={service.id} className="cursor-pointer font-medium">
-                              {service.name}
-                            </Label>
-                            <p className="text-sm text-muted-foreground">{service.description}</p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="lastName">Last Name</Label>
+                          <Input
+                            id="lastName"
+                            name="lastName"
+                            value={formData.lastName}
+                            onChange={handleInputChange}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="email">Email Address</Label>
+                          <Input
+                            id="email"
+                            name="email"
+                            type="email"
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="phone">Phone Number</Label>
+                          <Input
+                            id="phone"
+                            name="phone"
+                            type="tel"
+                            value={formData.phone}
+                            onChange={handleInputChange}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="address">Project Address</Label>
+                        <Input
+                          id="address"
+                          name="address"
+                          value={formData.address}
+                          onChange={handleInputChange}
+                          placeholder="Street address"
+                          required
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="city">City</Label>
+                          <Input id="city" name="city" value={formData.city} onChange={handleInputChange} required />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="zipCode">ZIP Code</Label>
+                          <Input
+                            id="zipCode"
+                            name="zipCode"
+                            value={formData.zipCode}
+                            onChange={handleInputChange}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label>Preferred Contact Method</Label>
+                        <RadioGroup
+                          value={formData.preferredContact}
+                          onValueChange={(value) => handleSelectChange("preferredContact", value)}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="phone" id="contact-phone" />
+                            <Label htmlFor="contact-phone">Phone</Label>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="specialRequirements">Special Requirements or Notes</Label>
-                      <Textarea
-                        id="specialRequirements"
-                        name="specialRequirements"
-                        value={formData.specialRequirements}
-                        onChange={handleInputChange}
-                        placeholder="Any special requirements, accessibility needs, or additional details..."
-                        rows={4}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
-
-            {/* Step 3: Contact Information */}
-            {step === 3 && (
-              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Contact Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="firstName">First Name</Label>
-                        <Input
-                          id="firstName"
-                          name="firstName"
-                          value={formData.firstName}
-                          onChange={handleInputChange}
-                          required
-                        />
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="email" id="contact-email" />
+                            <Label htmlFor="contact-email">Email</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="either" id="contact-either" />
+                            <Label htmlFor="contact-either">Either</Label>
+                          </div>
+                        </RadioGroup>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="lastName">Last Name</Label>
-                        <Input
-                          id="lastName"
-                          name="lastName"
-                          value={formData.lastName}
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                    </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email Address</Label>
-                        <Input
-                          id="email"
-                          name="email"
-                          type="email"
-                          value={formData.email}
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">Phone Number</Label>
-                        <Input
-                          id="phone"
-                          name="phone"
-                          type="tel"
-                          value={formData.phone}
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="address">Project Address</Label>
-                      <Input
-                        id="address"
-                        name="address"
-                        value={formData.address}
-                        onChange={handleInputChange}
-                        placeholder="Street address"
-                        required
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="city">City</Label>
-                        <Input id="city" name="city" value={formData.city} onChange={handleInputChange} required />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="zipCode">ZIP Code</Label>
-                        <Input
-                          id="zipCode"
-                          name="zipCode"
-                          value={formData.zipCode}
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label>Preferred Contact Method</Label>
-                      <RadioGroup
-                        value={formData.preferredContact}
-                        onValueChange={(value) => handleSelectChange("preferredContact", value)}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="phone" id="contact-phone" />
-                          <Label htmlFor="contact-phone">Phone</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="email" id="contact-email" />
-                          <Label htmlFor="contact-email">Email</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="either" id="contact-either" />
-                          <Label htmlFor="contact-either">Either</Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
-
-            {/* Step 4: Final Details */}
-            {step === 4 && (
+              {/* Navigation Buttons */}
+              <div className="flex justify-between mt-8">
+                <Button type="button" variant="outline" onClick={prevStep} disabled={step === 1}>
+                  Previous
+                </Button>
+                <Button type="button" onClick={nextStep}>
+                  Next Step
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              {/* Step 4: Final Details */}
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
                 <Card>
                   <CardHeader>
@@ -513,25 +557,18 @@ export default function QuotePage() {
                   </CardContent>
                 </Card>
               </motion.div>
-            )}
 
-            {/* Navigation Buttons */}
-            <div className="flex justify-between mt-8">
-              <Button type="button" variant="outline" onClick={prevStep} disabled={step === 1}>
-                Previous
-              </Button>
-
-              {step < 4 ? (
-                <Button type="button" onClick={nextStep}>
-                  Next Step
+              {/* Navigation Buttons */}
+              <div className="flex justify-between mt-8">
+                <Button type="button" variant="outline" onClick={prevStep}>
+                  Previous
                 </Button>
-              ) : (
                 <Button type="submit" className="bg-primary">
                   Submit Quote Request
                 </Button>
-              )}
-            </div>
-          </form>
+              </div>
+            </form>
+          )}
 
           {/* Contact Information Sidebar */}
           <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -539,7 +576,7 @@ export default function QuotePage() {
               <CardContent className="p-6 text-center">
                 <Phone className="h-8 w-8 mx-auto mb-4 text-primary" />
                 <h3 className="font-semibold mb-2">Call Us</h3>
-                <p className="text-muted-foreground mb-2">1-800-FLOOR-PRO</p>
+                <p className="text-muted-foreground mb-2">+254-722 843995</p>
                 <p className="text-sm text-muted-foreground">Mon-Fri: 8AM-6PM</p>
               </CardContent>
             </Card>
@@ -548,7 +585,7 @@ export default function QuotePage() {
               <CardContent className="p-6 text-center">
                 <Mail className="h-8 w-8 mx-auto mb-4 text-primary" />
                 <h3 className="font-semibold mb-2">Email Us</h3>
-                <p className="text-muted-foreground mb-2">quotes@ ModarFlor.com</p>
+                <p className="text-muted-foreground mb-2">quotes@modaflor-ke.com</p>
                 <p className="text-sm text-muted-foreground">24-hour response</p>
               </CardContent>
             </Card>

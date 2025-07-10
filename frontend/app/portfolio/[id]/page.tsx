@@ -55,7 +55,7 @@ const PortfolioProjectPage = ({ params }: { params: { id: string } }) => {
 		)
 	}
 
-	const shareTitle = `Check out this project: ${project?.title || "A project"} by ModarFlor!`
+	const shareTitle = `Check out this project: ${project?.title || "A project"} by ModaFlor!`
 
 	// Social links definition
 	const socialLinks = [

@@ -102,10 +102,11 @@ export default function EditUserPage() {
     setLoading(true)
     setFormError(null)
 
-    const payload: Partial<UserEditFormData> = {
+    const payload: UserEditFormData = {
       name: formData.name,
       email: formData.email,
       role: formData.role,
+      password: formData.password || undefined,
     }
 
     if (formData.password) {
@@ -135,12 +136,16 @@ export default function EditUserPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload), // Send only fields that can be updated
+        body: JSON.stringify(payload),
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || "Failed to update user")
+        let errorMessage = "Failed to update user"
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.message || errorMessage
+        } catch {}
+        throw new Error(errorMessage)
       }
 
       toast({ title: "Success!", description: "User updated successfully." })

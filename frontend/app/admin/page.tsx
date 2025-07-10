@@ -133,7 +133,7 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">ModarFlor Admin Dashboard</h1>
-        <p className="text-muted-foreground">Welcome to the ModarFlor admin dashboard. Manage all your projects, services, testimonials, users, and more from one place.</p>
+        <p className="text-muted-foreground">Welcome to the ModaFlor admin dashboard. Manage all your projects, services, testimonials, users, and more from one place.</p>
       </div>
 
       {/* Stats Cards */}
@@ -161,7 +161,7 @@ export default function AdminDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <TrendingUp className="h-5 w-5 mr-2" />
-              Recent ModarFlor Projects
+              Recent ModaFlor Projects
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -183,7 +183,7 @@ export default function AdminDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <MessageSquare className="h-5 w-5 mr-2" />
-              Recent ModarFlor Testimonials
+              Recent ModaFlor Testimonials
             </CardTitle>
           </CardHeader>
           <CardContent>

@@ -79,8 +79,17 @@ export default function AdminUsers() {
         const errorData = await response.json().catch(() => ({ message: "Failed to fetch users and parse error."}));
         throw new Error(errorData.message || "Failed to fetch users")
       }
-      const data: User[] = await response.json()
-      setUsers(Array.isArray(data) ? data : (data as any).users || [])
+      const data = await response.json();
+      // Normalize backend response to always be an array
+      let usersArr: User[] = [];
+      if (Array.isArray(data)) {
+        usersArr = data;
+      } else if (Array.isArray(data.data)) {
+        usersArr = data.data;
+      } else if (Array.isArray(data.users)) {
+        usersArr = data.users;
+      }
+      setUsers(usersArr)
     } catch (error) {
       console.error("Error fetching users:", error)
       // Avoid setting error if redirection happened or is about to happen
@@ -147,9 +156,26 @@ export default function AdminUsers() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="ml-2">Loading users...</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Array.from({ length: 6 }).map((_, idx) => (
+          <Card key={idx} className="overflow-hidden animate-pulse">
+            <CardContent className="p-4 flex flex-col gap-3">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="h-12 w-12 bg-gray-200 rounded-full" />
+                <div>
+                  <div className="h-5 w-32 bg-gray-300 rounded mb-2" />
+                  <div className="h-4 w-48 bg-gray-200 rounded" />
+                </div>
+              </div>
+              <div className="h-4 w-24 bg-gray-200 rounded mb-2" />
+              <div className="h-3 w-32 bg-gray-100 rounded mb-2" />
+              <div className="flex gap-2 mt-auto">
+                <div className="h-8 w-16 bg-gray-200 rounded" />
+                <div className="h-8 w-16 bg-gray-200 rounded" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     )
   }

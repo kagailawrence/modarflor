@@ -1,5 +1,5 @@
 import type { Request, Response } from "express"
-import bcrypt from "bcrypt"
+import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
 import { query } from "../database/connection"
 import { catchAsync, AppError } from "../middleware/errorHandler"

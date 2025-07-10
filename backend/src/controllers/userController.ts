@@ -1,5 +1,5 @@
 import type { Request, Response } from "express"
-import bcrypt from "bcrypt"
+import bcrypt from "bcryptjs"
 import { query } from "../database/connection"
 import { catchAsync, AppError } from "../middleware/errorHandler"
 import { validateUser } from "../utils/validation"
@@ -106,21 +106,16 @@ export const updateUser = catchAsync(async (req: Request, res: Response) => {
     const salt = await bcrypt.genSalt(12)
     hashedPassword = await bcrypt.hash(password, salt)
   }
-
-  const result = await query(
-    `UPDATE users SET name = $1, email = $2, role = $3${
-      password ? ", password = $4" : ""
-    }, updated_at = CURRENT_TIMESTAMP WHERE id = $5 RETURNING id, email, name, role, created_at, updated_at`,
-    password
-      ? [
-          name || existing.rows[0].name,
-          email || existing.rows[0].email,
-          role || existing.rows[0].role,
-          hashedPassword,
-          id,
-        ]
-      : [name || existing.rows[0].name, email || existing.rows[0].email, role || existing.rows[0].role, id]
-  )
+  let queryStr;
+  let params;
+  if (password) {
+    queryStr = `UPDATE users SET name = $1, email = $2, role = $3::text, password = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 RETURNING id, email, name, role, created_at, updated_at`;
+    params = [name || existing.rows[0].name, email || existing.rows[0].email, role || existing.rows[0].role, hashedPassword, id];
+  } else {
+    queryStr = `UPDATE users SET name = $1, email = $2, role = $3::text, updated_at = CURRENT_TIMESTAMP WHERE id = $4 RETURNING id, email, name, role, created_at, updated_at`;
+    params = [name || existing.rows[0].name, email || existing.rows[0].email, role || existing.rows[0].role, id];
+  }
+  const result = await query(queryStr, params);
 
   res.json(result.rows[0])
 })

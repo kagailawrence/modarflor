@@ -159,16 +159,12 @@ alert(JSON.stringify(response.status))
                 )}
               </Button>
             </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-sm text-muted-foreground">Demo credentials: admin@modarflor.com / admin123</p>
-            </div>
           </CardContent>
         </Card>
 
         <div className="text-center">
           <Link href="/" className="text-sm text-primary hover:underline">
-            ← Back to ModarFlor Website
+            ← Back to ModaFlor Website
           </Link>
         </div>
       </div>

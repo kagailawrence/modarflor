@@ -144,7 +144,7 @@ export default function ReviewsClient({ testimonials }: { testimonials: Testimon
               <Card>
                 <CardContent className="p-6">
                   <h3 className="font-semibold mb-4">Write a Review</h3>
-                  <p className="text-sm text-muted-foreground mb-4">Share your experience with ModarFlor</p>
+                  <p className="text-sm text-muted-foreground mb-4">Share your experience with ModaFlor</p>
                   <Button className="w-full" onClick={() => setShowReviewForm(!showReviewForm)}>
                     <MessageCircle className="w-4 h-4 mr-2" />
                     Write Review
@@ -258,7 +258,7 @@ export default function ReviewsClient({ testimonials }: { testimonials: Testimon
                           <Label htmlFor="review-text">Your Review</Label>
                           <Textarea
                             id="review-text"
-                            placeholder="Share your experience with ModarFlor..."
+                            placeholder="Share your experience with ModaFlor..."
                             rows={5}
                           />
                         </div>

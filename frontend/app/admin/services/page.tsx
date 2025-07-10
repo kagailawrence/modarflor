@@ -106,9 +106,27 @@ export default function AdminServices() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="ml-2">Loading services...</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Array.from({ length: 6 }).map((_, idx) => (
+          <Card key={idx} className="overflow-hidden animate-pulse">
+            <div className="relative h-48 w-full bg-muted" />
+            <CardContent className="p-4">
+              <div className="h-5 w-32 bg-gray-300 rounded mb-2" />
+              <div className="h-4 w-full bg-gray-200 rounded mb-4" />
+              <div className="flex gap-2 mb-2">
+                <div className="h-4 w-16 bg-gray-300 rounded" />
+                <div className="h-4 w-16 bg-gray-200 rounded" />
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="h-3 w-20 bg-gray-200 rounded" />
+                <div className="flex gap-2">
+                  <div className="h-8 w-8 bg-gray-200 rounded-full" />
+                  <div className="h-8 w-8 bg-gray-200 rounded-full" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     )
   }

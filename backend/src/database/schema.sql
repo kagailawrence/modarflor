@@ -63,6 +63,75 @@ CREATE TABLE IF NOT EXISTS service_features (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS faqs (
+  id SERIAL PRIMARY KEY,
+  question TEXT NOT NULL,
+  answer TEXT NOT NULL,
+  order_index INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Contact messages table
+CREATE TABLE IF NOT EXISTS contacts (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(50),
+    service VARCHAR(255),
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Schedule table
+CREATE TABLE IF NOT EXISTS schedules (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(50),
+    date DATE NOT NULL,
+    time TIME NOT NULL,
+    message TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Quotes table
+CREATE TABLE IF NOT EXISTS quotes (
+    id SERIAL PRIMARY KEY,
+    project_type VARCHAR(100),
+    flooring_type VARCHAR(100),
+    square_footage INTEGER,
+    rooms INTEGER,
+    timeline VARCHAR(100),
+    additional_services TEXT,
+    special_requirements TEXT,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(50),
+    address VARCHAR(255),
+    city VARCHAR(100),
+    zip_code VARCHAR(20),
+    preferred_contact VARCHAR(50),
+    project_description TEXT,
+    budget VARCHAR(50),
+    start_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Flooring types table for dynamic quotation pricing
+CREATE TABLE IF NOT EXISTS flooring_types (
+    id SERIAL PRIMARY KEY,
+    type_id VARCHAR(50) UNIQUE NOT NULL, -- e.g. 'epoxy', 'tile', etc.
+    name VARCHAR(100) NOT NULL,
+    price_min INTEGER NOT NULL,
+    price_max INTEGER NOT NULL,
+    unit VARCHAR(50) DEFAULT 'sq ft',
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_projects_category ON projects(category);
 CREATE INDEX IF NOT EXISTS idx_projects_type ON projects(type);

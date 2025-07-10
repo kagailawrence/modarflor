@@ -137,7 +137,7 @@ export default function BlogPage() {
       <div className="container mx-auto px-4">
         {/* Hero Section */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4"> ModarFlor Blog</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4"> ModaFlor Blog</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Expert insights, tips, and trends in the flooring industry. Stay informed with our latest articles and
             guides.

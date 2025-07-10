@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { toast } from "sonner"
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -10,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card"
 import { Phone, Mail, MapPin, Clock, Send, Loader2 } from "lucide-react"
 import { motion } from "framer-motion"
+import { BASE_URL } from "@/lib/baseUrl"
 
 export default function ContactPage() {
   const [formState, setFormState] = useState({
@@ -34,24 +36,29 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-
-    setIsSubmitting(false)
-    setIsSubmitted(true)
-    setFormState({
-      name: "",
-      email: "",
-      phone: "",
-      service: "",
-      message: "",
-    })
-
-    // Reset success message after 5 seconds
-    setTimeout(() => {
-      setIsSubmitted(false)
-    }, 5000)
+    try {
+      const res = await fetch(BASE_URL+"/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formState),
+      })
+      if (!res.ok) {
+        throw new Error("Failed to send message. Please try again later.")
+      }
+      setIsSubmitted(true)
+      setFormState({
+        name: "",
+        email: "",
+        phone: "",
+        service: "",
+        message: "",
+      })
+      setTimeout(() => setIsSubmitted(false), 5000)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send message.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -94,7 +101,7 @@ export default function ContactPage() {
                           name="name"
                           value={formState.name}
                           onChange={handleChange}
-                          placeholder="John Doe"
+                          placeholder="Name"
                           required
                         />
                       </div>
@@ -108,7 +115,7 @@ export default function ContactPage() {
                           type="email"
                           value={formState.email}
                           onChange={handleChange}
-                          placeholder="john@example.com"
+                          placeholder="Name@example.com"
                           required
                         />
                       </div>
@@ -124,7 +131,7 @@ export default function ContactPage() {
                           name="phone"
                           value={formState.phone}
                           onChange={handleChange}
-                          placeholder="(123) 456-7890"
+                          placeholder="(254) 456-7890"
                         />
                       </div>
                       <div className="space-y-2">

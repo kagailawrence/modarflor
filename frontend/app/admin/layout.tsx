@@ -8,12 +8,13 @@ import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { LayoutDashboard, FolderOpen, MessageSquare, Settings, Users, LogOut, Menu, X, Home, AlertCircle } from "lucide-react"
+import { LayoutDashboard, FolderOpen, MessageSquare, Settings, Users, LogOut, Menu, X, Home, AlertCircle, Layers } from "lucide-react"
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Projects", href: "/admin/projects", icon: FolderOpen },
   { name: "Services", href: "/admin/services", icon: Settings },
+  { name: "Flooring Types", href: "/admin/flooring-types", icon: Layers },
   { name: "Testimonials", href: "/admin/testimonials", icon: MessageSquare },
   { name: "FAQs", href: "/admin/faqs", icon: AlertCircle }, // <-- Add FAQ to sidebar
   { name: "Users", href: "/admin/users", icon: Users },
@@ -100,7 +101,7 @@ export default function AdminLayout({
           <div className="px-6 mb-6">
             <Link href="/" className="flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-primary">
               <Home className="h-4 w-4 mr-2" />
-              Back to ModarFlor Website
+              Back to ModaFlor Website
             </Link>
           </div>
 

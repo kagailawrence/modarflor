@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express"
 import jwt from "jsonwebtoken"
-import { prisma } from "../prismaClient"
+import { query } from "../database/connection"
 
 // Extend Express Request type to include user
 declare global {
@@ -72,10 +72,9 @@ export const refreshToken = async (req: Request, res: Response) => {
       id: string
     }
 
-    // Find the user
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-    })
+    // Find the user using raw SQL
+    const result = await query("SELECT id, email, role FROM users WHERE id = $1", [decoded.id])
+    const user = result.rows[0]
 
     if (!user) {
       return res.status(404).json({ message: "User not found" })

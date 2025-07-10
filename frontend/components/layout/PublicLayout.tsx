@@ -1,8 +1,11 @@
 "use client"
 import { usePathname } from "next/navigation"
+import dynamic from "next/dynamic"
+
 import Header from "@/components/layout/header"
 import Footer from "@/components/layout/footer"
-import WhatsAppFloater from "@/components/whatsapp-floater"
+
+const WhatsAppFloater = dynamic(() => import("@/components/whatsapp-floater"), { ssr: false })
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()

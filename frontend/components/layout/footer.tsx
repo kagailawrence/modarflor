@@ -11,8 +11,8 @@ const Footer = () => {
           {/* Company Info */}
           <div className="space-y-4">
             <Link href="/" className="flex items-center space-x-2">
-          <span className="text-2xl font-bold text-primary">Modar<span className="text-2xl font-light">Flor</span></span>
-        </Link>
+              <img src="/logo.png" alt="ModarFlor Logo" className="h-20 w-auto max-w-[250px] object-contain" />
+            </Link>
             <p className="text-muted-foreground">
               Premium floor decoration solutions for residential and commercial spaces.
             </p>
@@ -81,7 +81,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-border mt-12 pt-6 text-center text-muted-foreground">
-          <p>© {new Date().getFullYear()}  ModarFlor. All rights reserved.</p>
+          <p>© {new Date().getFullYear()}  ModaFlor. All rights reserved.</p>
         </div>
       </div>
     </footer>

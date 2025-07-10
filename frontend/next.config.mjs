@@ -1,4 +1,4 @@
-/** @type {import('next').NextConfig} */
+//  @type {import('next').NextConfig} 
 const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
@@ -17,7 +17,6 @@ const nextConfig = {
       },
     ],
   },
-  // output: 'export', // Enable static export
  trailingSlash: true,
 }
 
